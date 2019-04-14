@@ -1,22 +1,169 @@
 
-#include <GL/glut.h>  // GLUT, include glu.h and gl.h
+#include <GL/glut.h>  
+#include < GL/freeglut.h>
 #include<iostream>
 #include<vector>
+
+#define FOR(i,a,b,increment) for(float i=a;i<=b;i=i+increment)
+#define FORD(i,a,b,decrement) for(float i=a;i>=b;i=i-decrement)
+#define REP(i,n) for(int i=0;i<n;++i)
+int winw =640 , winh=640;
 
 /*stuff to do
 make simulatenous face rotations possible use quaternions or something
 make it presentable
 bfs
 */
+typedef void(*ButtonCallback)();
+void drawText(void *, const char*, float , float );
+void displayTitle();
 
-struct cube {
+struct Mouse
+{
+	float x;			//the x coordinate of the mouse cursor
+	float y;			//the y coordinate of the mouse cursor	
+	int ButtonClicked;	//is the left button pressed?	
+};
+typedef struct Mouse Mouse;
+Mouse mouse = {0,0,0};
+GLdouble winX,winY,winZ;
 
-	GLfloat  x, y, z;
+void WindowCoordinates(GLdouble x, GLdouble y)
+{
+	
+	GLint viewport[4]; //var to hold the viewport info
+	GLdouble modelview[16]; //var to hold the modelview info
+	GLdouble projection[16]; //var to hold the projection matrix info
+	glGetDoublev(GL_MODELVIEW_MATRIX, modelview); //get the modelview info
+	glGetDoublev(GL_PROJECTION_MATRIX, projection); //get the projection matrix info
+	glGetIntegerv(GL_VIEWPORT, viewport); //get the viewport info
+	gluProject(x,y,0.0,modelview,projection,viewport,&winX,&winY,&winZ);
+}
+class Button {
+	public:
+	    float x;				
+		float   y;			
+		float   w;
+		float   h;							
+		int	  state;						 
+		int	  highlighted;					
+		const char* label;						
+	    ButtonCallback callbackFunction;
 
+	Button(const int px, const int py, const int pw,const int ph, int pstate, int phighlighted,const char* plabel,ButtonCallback pcallbackFunction)
+	{
+		x = px;							//top left x coord of the button 
+	    y = py;							// top left y coord of the button 
+		w = pw;					        // the width of the button 
+		h = ph;							// the height of the button 
+		state =pstate;					// the state, 1 if pressed, 0 otherwise 
+		highlighted =phighlighted;	    // is the mouse cursor over the control? 
+		label = plabel;				    // the text label of the button 
+		callbackFunction = pcallbackFunction;
+	}
+
+	void ButtonDraw()
+	{
+		float fontx=0;
+		float fonty=0;
+		glColor3f(0, 0.8, 0);
+		//draw background for the button.
+		glBegin(GL_QUADS);
+		glVertex2f(x, y);
+		glVertex2f(x, y + h);
+		glVertex2f(x + w, y + h);
+		glVertex2f(x + w, y);
+		glEnd();	
+		//Draw an outline around the button
+		ButtonPassive();
+		if (!highlighted)
+		{
+			glColor3f(0.0f, 0.3f, 0.0f);
+			glLineWidth(6);
+			glBegin(GL_LINE_STRIP);
+			glVertex2f(x + 0.006, y + h);
+			glVertex2f(x + w+0.006, y + h);
+			glEnd();
+			glLineWidth(10);
+			glBegin(GL_LINE_STRIP);
+			glVertex2f(x + w, y + h + 0.03);
+			glVertex2f(x + w, y);
+			glEnd();
+		}
+		fontx = x + w/5.5;
+		fonty = y + h / 2.6;
+		//printf_s("x %f \n y %f \n", fontx, fonty);
+		glColor3f(1, 0, 0);
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_LIGHTING);
+		glColor3f(0, 0, 0);
+		drawText(GLUT_BITMAP_TIMES_ROMAN_24, label, fontx, fonty );
+	}
+	int ButtonArea()
+	{
+		double WminX, WminY, WmaxX, WmaxY;
+		WindowCoordinates(x, -y);
+		WminX = winX;
+		WminY = winY;
+		WindowCoordinates((x+w), -(y+h));
+		WmaxX = winX;
+		WmaxY = winY;
+		printf_s(" Window x %f \n Window y  %f \n Window x1 %f  Window y1 %f \n", WminX, WminY, WmaxX,WmaxY);
+		if (mouse.x > WminX      &&
+			mouse.x < WmaxX		 &&
+			mouse.y > WminY      &&
+			mouse.y < WmaxY)
+		
+			return 1;
+				
+		return 0;
+	}
+	void OnButtonClicked()
+	{
+		//printf_s(" x %f \n y %f \n", mouse.x, mouse.y);
+			//if the mouse click was within the buttons client area, set the state to true
+		
+
+		if (ButtonArea() && mouse.ButtonClicked)
+		{
+			//printf_s("inside x %f \n inside y %f \n", mouse.x, mouse.y);
+			state = 1;
+			callbackFunction();
+		}
+			else
+				state = 0;
+		glutPostRedisplay();
+	}
+
+	void ButtonPassive()
+	{
+		
+		printf_s("x %f \n y %f \n", mouse.x, mouse.y);
+			//if the mouse moved over the control
+			if (ButtonArea())
+			{
+				//if (highlighted == 0) {
+					//highlighted = 1;
+					printf_s("inside x %f \n inside y %f \n", mouse.x, mouse.y);
+					//glutPostRedisplay();
+				
+			}
+			//else
+			//{
+				if (highlighted == 1)
+				{
+					highlighted = 0;
+					glutPostRedisplay();
+				}
+			//}
+	}
 };
 void draw_cube(float, float, float);
-
-double cube_size = 1;
+void TheButtonCallback()
+{
+	printf("I have been called\n");
+}
+const double cube_size = 1;
 double gap = 0.04;
 int n = 0;
 double minValue;
@@ -35,117 +182,75 @@ void initGL() {
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);  // Nice perspective corrections
 }
 
-/* Handler for window-repaint event. Called back when the window first appears and
-   whenever the window needs to be re-painted. */
-void display() {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear color and depth buffers
-	glMatrixMode(GL_MODELVIEW);     // To operate on model-view matrix
-	glLoadIdentity(); 
+void drawCube()
+{
 	double x, y, z;
 	if (n & 1)
 		minValue = -((n - 1) / 2 * cube_size);
 	else
 		minValue = -(n / 2 * cube_size - cube_size / 2);
 	int count = 0;
-
-	glTranslated(0, 0, -10);
+	
 	glPushMatrix();
 	glRotatef(rotX, 1.0, 0.0, 0.0); // rotate in y axis
 	glRotatef(rotY, 0.0, 1.0, 0.0); // rotate in x axis
+	//GLfloat matrixf[16];
+   //Generic rubiks cube
+	FOR(i, minValue, -minValue, cube_size) {// step through x axis				
 
-	
+		FOR(j, minValue, -minValue, cube_size) {// step through y axis
 
-	
-
-		
-		//Generic rubiks cube
-	for (float i = minValue; i <= (-1*minValue) ; i+=cube_size) {// step through x axis
-				
-		for (float j = minValue; j <=(-1*minValue); j+=cube_size) {// step through y axis
-
-										
-			for (float k = minValue; k <=(-1*minValue); k+=cube_size) // step through z axis
+			FOR(k, minValue, -minValue, cube_size)// step through z axis
 			{
-				
-				x = i+ i * gap;
-				y = (j) + j* gap;
-				z = (k) + k * gap;
+
+				x = i + i * gap;
+				y = (j)+j * gap;
+				z = (k)+k * gap;
 				glPushMatrix();
-		
+
 				switch (selector)
 				{
 				case 'i': if (i == selector_value) glRotatef(angle, 1, 0, 0); break;
 				case 'j': if (j == selector_value) glRotatef(angle, 0, 1, 0); break;
-				case 'k': if (k ==  selector_value) glRotatef(angle, 0, 0, 1); break;
-					
+				case 'k': if (k == selector_value) glRotatef(angle, 0, 0, 1); break;
+
 				}
 
-				
-
+				//glGetFloatv(GL_MODELVIEW_MATRIX, matrixf);
+				//glLoadMatrixf(matrixf);
 				draw_cube(x, y, z);
-
 				glPopMatrix();
 				//std::cout << x<< std::endl << y<< std::endl << z<< std::endl;
 			}
 		}
-		
-		
 	}
+	
+	glPopMatrix();
 
-	
-	
-	//glPushMatrix();
-	//glRotatef(angleCube, 0, 0, 1);
-	//draw_cube(-0.75, 0.75, -10.0);
-	//glPopMatrix()
-	//glRotatef(angleCube, 0, 1, 0);
-	/*for (int i = 0; i < 3; i++)
-	{
-		x = k;
-		if (i!= 0)
-			y += cube_size;
-
-		for (int j = 0; j < 3; j++)
-		{
-			if (j != 0)
-				x += cube_size;
-			(x > 0) ? x1 = x + gap : (x != 0) ? x1 = x - gap : x1 = x;
-			(y > 0) ? y1 = y + gap : (y != 0) ? y1 = y - gap : y1 = y;
-			//draw_cube(x1, k+1, y1);
-		}
-	}*/
-	//glRotatef(angleCube, 1, 1, 1);
-	
-	glutSwapBuffers(); 
-	//if (angleCube < 90)
-		// Swap the front and back frame buffers (double buffering)
-	//else
-		
-	//angle+ =12 ;
-		glPopMatrix();
-		
 }
 
-void print()
-{
-	std::vector<cube> a[3][3][3];
-		
-		for (int i = 0; i < 3; i++)
-	{
-		for (int j = 0; j < 3; j++)
-		{
-			
-
-		}
-	}
-
+/* Handler for window-repaint event. Called back when the window first appears and
+   whenever the window needs to be re-painted. */
+void display() {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear color and depth buffers
+	glMatrixMode(GL_MODELVIEW);     // To operate on model-view matrix
+	glLoadIdentity(); 
+	glTranslatef(0, 0, -10);
+	Button bstart = Button(-1, -1, 2.5, 1.15, 0, 0, "START", TheButtonCallback);
+	bstart.ButtonDraw();
+	//Button bstart1 = Button(-3, -3, 2.5, 1.15, 0, 0, "START1", TheButtonCallback);
+	//bstart1.ButtonDraw();
+	displayTitle();
+	drawCube();
+	glutSwapBuffers();
 }
 
 void draw_cube(float x, float y, float z)
 {
 
-	//vector<cube_rotate> lrot = cube_rotations[x][y][z];
+	//vector<cube_rotate> rot = cubeRotations[x][y][z];
 	//glLoadIdentity();
+	//glRotatef(angle, 0, 0, 0);
 	glPushMatrix();
 	 glTranslatef(x,y,z);
 	glColor3f(1.0f, 0.0f, 0.0f);
@@ -206,7 +311,60 @@ void draw_cube(float x, float y, float z)
 
 }
 
+//to display text on the screen
+void drawText(void *font, const char *text, float x, float y)
+{
+	//glPushMatrix();
+	
+	glRasterPos2f(x, y);
 
+	while (*text != '\0')
+	{
+		glutBitmapCharacter(font, *text);
+		++text;
+	}
+	//glPopMatrix();
+}
+//mouse functions
+void MouseButton(int button, int state, int x, int y)
+{
+	if (state == GLUT_DOWN && button == GLUT_LEFT_BUTTON)
+	{
+		mouse.ButtonClicked = 1;
+	}
+	else
+		mouse.ButtonClicked = 0;
+	mouse.x = x;
+	mouse.y = y;
+	glutPostRedisplay();
+}
+void displayTitle() {
+	//glPushMatrix();
+	//glTranslatef(0.5, 0, 0);
+	glColor3f(1.0, 0.27, 0.0);
+	drawText(GLUT_BITMAP_TIMES_ROMAN_24, "R",-2+0.5, 2.5);
+	glColor3f(0.9, 0, 0);
+	drawText(GLUT_BITMAP_TIMES_ROMAN_24, "U",-1.6+0.5, 2.5);
+	glColor3f(1, 1.0, 0);
+	drawText(GLUT_BITMAP_TIMES_ROMAN_24, "B" ,-1.2+0.5, 2.5);
+	glColor3f(0.3, 0.8, 0);
+	drawText(GLUT_BITMAP_TIMES_ROMAN_24,"I",-0.8+0.5, 2.5);
+	glColor3f(0, 0.5, 1);
+	drawText(GLUT_BITMAP_TIMES_ROMAN_24,"K", -0.4+0.5, 2.5);
+	glColor3f(0.4, 0.7, 0.1);
+	drawText(GLUT_BITMAP_TIMES_ROMAN_24,"S",0.0+0.5,2.5);
+	//glPopMatrix();
+}
+void MousePassiveMotion(int x, int y)
+{
+	//double normalizedX = -1.0 + 2.0 * (double)x / 640;
+	//double normalizedY = 1.0 - 2.0 *modelview info;
+	mouse.x = x;
+	mouse.y = y;
+	glutPostRedisplay();
+}
+
+//keyboard function
 void keyboardFunc(unsigned char key, int x, int y)
 {
 
@@ -214,6 +372,10 @@ void keyboardFunc(unsigned char key, int x, int y)
 
 	case '1':
 		n = 2;
+		break;
+
+	case '9':
+		
 		break;
 
 	case '2':
@@ -400,36 +562,33 @@ void reshape(GLsizei width, GLsizei height) {  // GLsizei for non-negative integ
    // Compute aspect ratio of the new window
 	if (height == 0) height = 1;                // To prevent divide by 0
 	GLfloat aspect = (GLfloat)width / (GLfloat)height;
-
+	winw = width;
+	winh = height;
 	// Set the viewport to cover the new window
-	glViewport(0, 0, width, height);
+	glViewport(0, 0, winw, winh);
 
 	// Set the aspect ratio of the clipping volume to match the viewport
 	glMatrixMode(GL_PROJECTION);  // To operate on the Projection matrix
 	glLoadIdentity();             // Reset
 	// Enable perspective projection with fovy, aspect, zNear and zFar
 	gluPerspective(45.0f, aspect, 0.1f, 100.0f);
-	//print();
-
-	//gluLookAt(angleCube, angleCube,angleCube+7, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 }
 
 
- 
-
 /* Main function: GLUT runs as a console application starting at main() */
 int main(int argc, char** argv) {
-	glutInit(&argc, argv);            // Initialize GLUT
+	glutInit(&argc, argv);						 // Initialize GLUT
 	glutInitDisplayMode(GLUT_DOUBLE|GLUT_DEPTH); // Enable double buffered mode
-	glutInitWindowSize(640, 480);   // Set the window's initial width & height
-	glutInitWindowPosition(50, 50); // Position the window's initial top-left corner
-	glutCreateWindow(title);   
-	// Create window with the given title
-	glutDisplayFunc(display);       // Register callback handler for window re-paint event
-	glutReshapeFunc(reshape);       // Register callback handler for window re-size event
-	initGL();                       // Our own OpenGL initialization
-	glutTimerFunc(0, timer, 0);
+	glutInitWindowSize(winw, winh);				// Set the window's initial width & height
+	glutInitWindowPosition(50, 50);				// Position the window's initial top-left corner
+	glutCreateWindow(title);					// Create window with the given title
+	glutDisplayFunc(display);					// Register callback handler for window re-paint event
+	glutReshapeFunc(reshape);					// Register callback handler for window re-size event
+	//initGL();									// Our own OpenGL initialization
+	//glutTimerFunc(0, timer, 0);
 	glutKeyboardFunc(keyboardFunc);
-	glutMainLoop();                 // Enter the infinite event-processing loop
+	glutMouseFunc(MouseButton);
+	glutPassiveMotionFunc(MousePassiveMotion);
+	glutMainLoop();								// Enter the infinite event-processing loop
 	return 0;
 }
