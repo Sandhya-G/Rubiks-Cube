@@ -27,6 +27,20 @@ struct Mouse
 typedef struct Mouse Mouse;
 Mouse mouse = {0,0,0};
 GLdouble winX,winY,winZ;
+void twoD()
+{
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_LIGHTING);
+}
+void threeD() {
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);				// Set background color to black and opaque
+	glClearDepth(1.0f);									// Set background depth to farthest
+	glEnable(GL_DEPTH_TEST);							// Enable depth testing for z-culling
+	glDepthFunc(GL_LEQUAL);								// Set the type of depth-test
+	glShadeModel(GL_SMOOTH);							// Enable smooth shading
+	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);  // Nice perspective corrections
+}
+
 
 void WindowCoordinates(GLdouble x, GLdouble y)
 {
@@ -75,7 +89,7 @@ class Button {
 		glVertex2f(x + w, y);
 		glEnd();	
 		//Draw an outline around the button
-		ButtonPassive();
+		OnButtonClicked();
 		if (!highlighted)
 		{
 			glColor3f(0.0f, 0.3f, 0.0f);
@@ -94,9 +108,6 @@ class Button {
 		fonty = y + h / 2.6;
 		//printf_s("x %f \n y %f \n", fontx, fonty);
 		glColor3f(1, 0, 0);
-		glDisable(GL_DEPTH_TEST);
-		glDisable(GL_LIGHTING);
-		glColor3f(0, 0, 0);
 		drawText(GLUT_BITMAP_TIMES_ROMAN_24, label, fontx, fonty );
 	}
 	int ButtonArea()
@@ -108,11 +119,11 @@ class Button {
 		WindowCoordinates((x+w), -(y+h));
 		WmaxX = winX;
 		WmaxY = winY;
-		printf_s(" Window x %f \n Window y  %f \n Window x1 %f  Window y1 %f \n", WminX, WminY, WmaxX,WmaxY);
+		//printf_s(" Window x %f \n Window y  %f \n Window x1 %f  Window y1 %f \n", WminX, WminY, WmaxX,WmaxY);
 		if (mouse.x > WminX      &&
 			mouse.x < WmaxX		 &&
-			mouse.y > WminY      &&
-			mouse.y < WmaxY)
+			mouse.y < WminY      &&
+			mouse.y > WmaxY)
 		
 			return 1;
 				
@@ -121,41 +132,36 @@ class Button {
 	void OnButtonClicked()
 	{
 		//printf_s(" x %f \n y %f \n", mouse.x, mouse.y);
-			//if the mouse click was within the buttons client area, set the state to true
-		
-
+		//if the mouse click was within the buttons client area, set the state to true
 		if (ButtonArea() && mouse.ButtonClicked)
 		{
 			//printf_s("inside x %f \n inside y %f \n", mouse.x, mouse.y);
 			state = 1;
+			highlighted = 1;
 			callbackFunction();
 		}
-			else
-				state = 0;
+		else
+		{
+			state = 0;
+			highlighted = 0;
+		}
 		glutPostRedisplay();
 	}
 
 	void ButtonPassive()
 	{
 		
-		printf_s("x %f \n y %f \n", mouse.x, mouse.y);
+		//printf_s("x %f \n y %f \n", mouse.x, mouse.y);
 			//if the mouse moved over the control
 			if (ButtonArea())
 			{
-				//if (highlighted == 0) {
-					//highlighted = 1;
 					printf_s("inside x %f \n inside y %f \n", mouse.x, mouse.y);
-					//glutPostRedisplay();
-				
+					highlighted = 1;
 			}
-			//else
-			//{
-				if (highlighted == 1)
-				{
-					highlighted = 0;
-					glutPostRedisplay();
-				}
-			//}
+			else
+				highlighted = 0;
+			
+			glutPostRedisplay();	
 	}
 };
 void draw_cube(float, float, float);
@@ -173,14 +179,7 @@ char selector = ' ';
 float selector_value ;
 int rotX = 0,rotY=0;
 int angle;
-void initGL() {
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Set background color to black and opaque
-	glClearDepth(1.0f);                   // Set background depth to farthest
-	glEnable(GL_DEPTH_TEST);   // Enable depth testing for z-culling
-	glDepthFunc(GL_LEQUAL);    // Set the type of depth-test
-	glShadeModel(GL_SMOOTH);   // Enable smooth shading
-	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);  // Nice perspective corrections
-}
+
 
 void drawCube()
 {
@@ -237,10 +236,12 @@ void display() {
 	glLoadIdentity(); 
 	glTranslatef(0, 0, -10);
 	Button bstart = Button(-1, -1, 2.5, 1.15, 0, 0, "START", TheButtonCallback);
+	twoD();
 	bstart.ButtonDraw();
 	//Button bstart1 = Button(-3, -3, 2.5, 1.15, 0, 0, "START1", TheButtonCallback);
 	//bstart1.ButtonDraw();
 	displayTitle();
+	threeD();
 	drawCube();
 	glutSwapBuffers();
 }
@@ -374,10 +375,6 @@ void keyboardFunc(unsigned char key, int x, int y)
 		n = 2;
 		break;
 
-	case '9':
-		
-		break;
-
 	case '2':
 		n = 3;
 		break;
@@ -439,14 +436,6 @@ void keyboardFunc(unsigned char key, int x, int y)
 		selector_value = minValue + 2*cube_size;
 		angle += 90;
 		break;
-		//rot_x = (rot_x - crement) % 360;
-		break;
-		// end of view rotation
-
-		// cube movements
-
-		// select cube face
-		// x-axis faces
 	case 'q':
 		selector = 'j';
 		selector_value = minValue;
@@ -509,36 +498,12 @@ void keyboardFunc(unsigned char key, int x, int y)
 		selector = 'k';
 		selector_value = minValue ;
 		angle += 90;
+		break;
 	case 'a':
 		selector = 'k';
 		selector_value = minValue;
 		angle -= 90;
-		
 		break;
-
-	
-
-		// z-axis faces
-	case 'C':
-	case 'c':
-
-		break;
-
-	case 'X':
-	case 'x':
-	
-		break;
-
-	case 'Z':
-	case 'z':
-		
-		break;
-
-		// move selected face
-	
-
-		// end of cube movements
-
 	default:
 		break;
 
