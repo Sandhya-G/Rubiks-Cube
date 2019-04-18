@@ -173,7 +173,7 @@ char selector = ' ';
 float selector_value ;
 int rotX = 0,rotY=0;
 int angle;
-
+int xc = 0, yc = 0, zc = 0;
 void Buttons()
 {
 	twoD();
@@ -232,6 +232,19 @@ void drawCube()
 				x = i + i * gap;
 				y = (j)+j * gap;
 				z = (k)+k * gap;
+
+				if (minValue + k * gap == z)
+					zc = -1;
+				if (-minValue + k * gap == z)
+					zc = 1;
+				if (minValue + j * gap == y)
+					yc = -1;
+				if (-minValue + j * gap == y)
+					yc = 1;
+				if (minValue + i * gap == x)
+					xc = -1;
+				if (-minValue + i * gap == x)
+					xc = 1;
 				glPushMatrix();
 
 				switch (selector)
@@ -281,7 +294,6 @@ void display() {
 	glutSwapBuffers();
 	glutPostRedisplay();
 }
-
 void draw_cube(float x, float y, float z)
 {
 
@@ -290,16 +302,11 @@ void draw_cube(float x, float y, float z)
 	//glRotatef(angle, 0, 0, 0);
 	glPushMatrix();
 	 glTranslatef(x,y,z);
-	glColor3f(1.0f, 0.0f, 0.0f);
-	glBegin(GL_QUADS);  // front
-	glNormal3f(0.0, 0.0, 1.0);  // face normal
-	glVertex3f(cube_size / 2, cube_size / 2, cube_size / 2);
-	glVertex3f(-cube_size / 2, cube_size / 2, cube_size / 2);
-	glVertex3f(-cube_size / 2, -cube_size / 2, cube_size / 2);
-	glVertex3f(cube_size / 2, -cube_size / 2, cube_size / 2);
-	glEnd();
-
-	glColor3f(1.0f, 0.5f, 0.0f);
+	
+	if (zc == -1)
+		glColor3f(1.0f, 0.5f, 0.0f);
+	else
+		glColor3f(0.4, 0.4, 0.4);
 	glBegin(GL_QUADS);  // back
 	glNormal3f(0.0, 0.0, -1.0);  // face normal
 	glVertex3f(cube_size / 2, cube_size / 2, -cube_size / 2);
@@ -307,8 +314,10 @@ void draw_cube(float x, float y, float z)
 	glVertex3f(-cube_size / 2, -cube_size / 2, -cube_size / 2);
 	glVertex3f(-cube_size / 2, cube_size / 2, -cube_size / 2);
 	glEnd();
-
-	glColor3f(0.0f, 0.0f, 1.0f);
+	if(xc == -1)
+		glColor3f(0.0f, 0.0f, 1.0f);
+	else
+		glColor3f(0.4, 0.4, 0.4);
 	glBegin(GL_QUADS);  // left
 	glNormal3f(-1.0, 0.0, 0.0);  // face normal 
 	glVertex3f(-cube_size / 2, cube_size / 2, cube_size / 2);
@@ -317,7 +326,22 @@ void draw_cube(float x, float y, float z)
 	glVertex3f(-cube_size / 2, -cube_size / 2, cube_size / 2);
 	glEnd();
 
-	glColor3f(0.0f, 1.0f, 0.0f);
+	if (yc == -1)
+		glColor3f(1.0f, 1.0f, 0.0f);
+	else
+		glColor3f(0.4, 0.4, 0.4);
+	glBegin(GL_QUADS);  // bottom
+	glNormal3f(0.0, -1.0, 0.0);  // face normal
+	glVertex3f(-cube_size / 2, -cube_size / 2, -cube_size / 2);
+	glVertex3f(cube_size / 2, -cube_size / 2, -cube_size / 2);
+	glVertex3f(cube_size / 2, -cube_size / 2, cube_size / 2);
+	glVertex3f(-cube_size / 2, -cube_size / 2, cube_size / 2);
+	glEnd();
+
+	if(xc == 1)
+		glColor3f(0.0f, 1.0f, 0.0f);
+	else
+		glColor3f(0.4, 0.4, 0.4);
 	glBegin(GL_QUADS);  // right
 	glNormal3f(1.0, 0.0, 0.0);  // face normal
 	glVertex3f(cube_size / 2, cube_size / 2, cube_size / 2);
@@ -326,7 +350,10 @@ void draw_cube(float x, float y, float z)
 	glVertex3f(cube_size / 2, cube_size / 2, -cube_size / 2);
 	glEnd();
 
+	if(yc == 1)
 	glColor3f(1.0f, 1.0f, 1.0f);
+	else
+		glColor3f(0.4, 0.4, 0.4);
 	glBegin(GL_QUADS);  // top
 	glNormal3f(0.0, 1.0, 0.0);  // face normal
 	glVertex3f(-cube_size / 2, cube_size / 2, -cube_size / 2);
@@ -335,14 +362,18 @@ void draw_cube(float x, float y, float z)
 	glVertex3f(cube_size / 2, cube_size / 2, -cube_size / 2);
 	glEnd();
 
-	glColor3f(1.0f, 1.0f, 0.0f);
-	glBegin(GL_QUADS);  // bottom
-	glNormal3f(0.0, -1.0, 0.0);  // face normal
-	glVertex3f(-cube_size / 2, -cube_size / 2, -cube_size / 2);
-	glVertex3f(cube_size / 2, -cube_size / 2, -cube_size / 2);
-	glVertex3f(cube_size / 2, -cube_size / 2, cube_size / 2);
+	if (zc == 1)
+		glColor3f(1.0f, 0.0f, 0.0f);
+	else
+		glColor3f(0.4, 0.4, 0.4);
+	glBegin(GL_QUADS);  // front
+	glNormal3f(0.0, 0.0, 1.0);  // face normal
+	glVertex3f(cube_size / 2, cube_size / 2, cube_size / 2);
+	glVertex3f(-cube_size / 2, cube_size / 2, cube_size / 2);
 	glVertex3f(-cube_size / 2, -cube_size / 2, cube_size / 2);
+	glVertex3f(cube_size / 2, -cube_size / 2, cube_size / 2);
 	glEnd();
+	
 
 	glPopMatrix();
 
@@ -410,16 +441,7 @@ void MousePassiveMotion(int x, int y)
 void keyboardFunc(unsigned char key, int x, int y)
 {
 
-	switch (key) {
-
-	case '1':
-		n = 2;
-		break;
-
-	case '2':
-		n = 3;
-		break;
-	
+	switch (key) {	
 	case 'R': // right
 	case 'r':
 		rotY += 24;
@@ -446,104 +468,102 @@ void keyboardFunc(unsigned char key, int x, int y)
 	case 'i'://side face antiClockwise
 		selector = 'i';
 		selector_value = minValue;
-		angle -= 90;
+		angle -= 45;
 		break;
 	case 'I'://side face clockwise
 		selector = 'i';
 		selector_value = minValue;
 			angle+= 90;
 			break;
-
-
 	case 'j':
 		selector = 'i';
 		selector_value = minValue+cube_size;
-		angle -= 90;
+		angle -= 45;
 		break;
 	case 'J':
 		selector = 'i';
 		selector_value = minValue+cube_size;
-		angle += 90;
+		angle += 45;
 		break;
 
 	case 'k': // up
 		selector = 'i';
 		selector_value = minValue + 2*cube_size;
-		angle -= 90;
+		angle -= 45;
 		break;
 
 	case 'K':
 		selector = 'i';
 		selector_value = minValue + 2*cube_size;
-		angle += 90;
+		angle += 45;
 		break;
 	case 'q':
 		selector = 'j';
 		selector_value = minValue;
-		angle -= 90;
+		angle -= 45;
 		break;
 	case 'Q':
 		selector = 'j';
 		selector_value = minValue;
-		angle += 90;
+		angle += 45;
 		break;
 	
 	case 'm':
 		selector = 'j';
 		selector_value = minValue +  cube_size;
-		angle -= 90;
+		angle -= 45;
 		break;
 	case 'M':
 		selector = 'j';
 		selector_value = minValue +  cube_size;
-		angle+= 90;
+		angle+= 45;
 		break;
 	case 'b':
 		selector = 'j';
 		selector_value = minValue + 2 * cube_size;
-		angle -= 90;
+		angle -= 45;
 		break;
 
 	case 'B':
 		selector = 'j';
 		selector_value = minValue + 2 * cube_size;
-		angle -= 90;
+		angle -= 45;
 		break;
 
 	
 	case 'w':
 		selector = 'k';
 		selector_value = minValue + 2 * cube_size;
-		angle -= 90;
+		angle -= 45;
 		break;
 
 	case 'W':
 		selector = 'k';
 		selector_value = minValue + 2 * cube_size;
-		angle += 90;
+		angle += 45;
 		break;
 
 	case 'E':
 		selector = 'k';
 		selector_value = minValue + cube_size;
-		angle += 90;
+		angle += 45;
 		break;
 	case 'e':
 		selector = 'k';
 		selector_value = minValue + cube_size;
-		angle -= 90;
+		angle -= 45;
 		break;
 
 		// y-axis faces
 	case 'A':
 		selector = 'k';
 		selector_value = minValue ;
-		angle += 90;
+		angle += 45;
 		break;
 	case 'a':
 		selector = 'k';
 		selector_value = minValue;
-		angle -= 90;
+		angle -= 45;
 		break;
 	default:
 		break;
@@ -574,18 +594,18 @@ void reshape(GLsizei width, GLsizei height) {  // GLsizei for non-negative integ
 
 /* Main function: GLUT runs as a console application starting at main() */
 int main(int argc, char** argv) {
-	glutInit(&argc, argv);						 // Initialize GLUT
+	glutInit(&argc, argv);// Initialize GLUT
 	glutInitDisplayMode(GLUT_DOUBLE|GLUT_DEPTH); // Enable double buffered mode
-	glutInitWindowSize(winw, winh);				// Set the window's initial width & height
-	glutInitWindowPosition(50, 50);				// Position the window's initial top-left corner
-	glutCreateWindow(title);					// Create window with the given title
-	glutDisplayFunc(display);					// Register callback handler for window re-paint event
-	glutReshapeFunc(reshape);					// Register callback handler for window re-size event
-	//initGL();									// Our own OpenGL initialization
+	glutInitWindowSize(winw, winh);// Set the window's initial width & height
+	glutInitWindowPosition(50, 50);// Position the window's initial top-left corner
+	glutCreateWindow(title);// Create window with the given title
+	glutDisplayFunc(display);// Register callback handler for window re-paint event
+	glutReshapeFunc(reshape);// Register callback handler for window re-size event
+	//initGL();									
 	//glutTimerFunc(0, timer, 0);
 	glutKeyboardFunc(keyboardFunc);
 	glutMouseFunc(MouseButton);
 	glutPassiveMotionFunc(MousePassiveMotion);
-	glutMainLoop();								// Enter the infinite event-processing loop
+	glutMainLoop();// Enter the infinite event-processing loop
 	return 0;
 }
