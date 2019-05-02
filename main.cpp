@@ -2,16 +2,243 @@
 #include <GL/glut.h>  
 #include<iostream>
 #include<vector>
+#include<cmath>
 
 #define FOR(i,a,b,increment) for(float i=a;i<=b;i=i+increment)
 #define FORD(i,a,b,decrement) for(float i=a;i>=b;i=i-decrement)
 #define REP(i,n) for(int i=0;i<n;++i)
+#define PI 3.14
+using namespace std;
+struct cube_rotate {
 
+	GLfloat angle, x, y, z;
+
+};
+GLint rot_x, rot_y, crement, x_0, x_k, y_0, y_k, z_0, z_k;
+
+vector<cube_rotate> cube_rotations[3][3][3];
+void apply_rotation(GLfloat angle) {
+
+	vector<cube_rotate> face[3][3];
+	int index;
+	cube_rotate rotation;
+
+	// copy face to be rotated
+	// apply rotation to face
+	for (int i = 0; i < 3; ++i)
+		for (int j = 0; j < 3; ++j) {
+
+			index = 2 - j % 3;
+
+			if (x_0 == x_k) {
+				rotation = { angle, 1.0, 0.0, 0.0 };
+				face[index][i] = cube_rotations[x_k][i][j];
+			}
+
+			if (y_0 == y_k) {
+				rotation = { angle, 0.0, 1.0, 0.0 };
+				face[index][i] = cube_rotations[j][y_k][i];
+			}
+
+			if (z_0 == z_k) {
+				rotation = { -1 * angle, 0.0, 0.0, 1.0 };
+				face[index][i] = cube_rotations[j][i][z_k];
+			}
+
+			face[index][i].push_back(rotation);
+
+		}
+
+	// copy back rotated face
+	for (int i = 0; i < 3; ++i)
+		for (int j = 0; j < 3; ++j) {
+
+			if (x_0 == x_k)
+				cube_rotations[x_k][i][j] = face[i][j];
+
+			if (y_0 == y_k)
+				cube_rotations[j][y_k][i] = face[i][j];
+
+			if (z_0 == z_k)
+				cube_rotations[j][i][z_k] = face[i][j];
+		}
+
+}
+
+// reset face selection parameters
+void reset_selected_face() {
+
+	x_0 = 0;
+	x_k = 2;
+	y_0 = 0;
+	y_k = 2;
+	z_0 = 0;
+	z_k = 2;
+
+}
 /*stuff to do
 make simulatenous face rotations possible use quaternions or something
 bfs
 */
 //typedef void(*ButtonCallback)();
+#define ROT(x, y, costheta, sintheta) x*costheta - y*sintheta, x*sintheta + y*costheta
+GLfloat rotatedegree = 0;
+
+//Code written by Dr. Jeong - Professor of Computer Science at the University of the District of Columbia (UDC)
+class CVector {
+public:
+	CVector() { x = y = z = 0; };
+	CVector(float x, float y, float z) { this->x = x; this->y = y; this->z = z; };
+	CVector operator+(const CVector& rhs) {
+		double r_x, r_y, r_z;
+		r_x = this->x + rhs.x;
+		r_y = this->y + rhs.y;
+		r_z = this->z + rhs.z;
+		return CVector(r_x, r_y, r_z);
+	};
+	CVector operator=(const CVector& rhs)
+	{
+		x = rhs.x; y = rhs.y; z = rhs.z;
+		return *this;
+	};
+	CVector CrossProduct(CVector rhs) {
+		return CVector(y * rhs.z - z * rhs.y,
+			z * rhs.x - x * rhs.z,
+			x * rhs.y - y * rhs.x);
+	};
+	CVector operator*(float constant) {
+		return CVector(x * constant, y * constant, z * constant);
+	};
+
+	CVector vector_scale(float constant, CVector v) {
+		return CVector(constant * v.x, constant * v.y, constant * v.z);
+	}
+
+	float Size() {
+		return sqrt(x * x + y * y + z * z);
+	};
+
+	CVector Norm() {
+		return *this* (1 / this->Size());
+	}
+	float DotProduct(CVector rhs) {
+		return (x * rhs.x + y * rhs.y + z * rhs.z);
+	};
+
+public:
+	float x, y, z;
+};
+
+
+class CQuaternion {
+public:
+	CQuaternion() { s = x = y = z = 0; };
+	CQuaternion(float s, float x, float y, float z) { this->s = s; this->x = x; this->y = y; this->z = z; };
+	CQuaternion operator*(const CQuaternion& rhs) {
+		double r_s, r_x, r_y, r_z;
+		r_s = this->s * rhs.s - this->x * rhs.x - this->y * rhs.y - this->z * rhs.z;
+		r_x = this->s * rhs.x + this->x * rhs.s + this->y * rhs.z - this->z * rhs.y;
+		r_y = this->s * rhs.y - this->x * rhs.z + this->y * rhs.s + this->z * rhs.x;
+		r_z = this->s * rhs.z + this->x * rhs.y - this->y * rhs.x + this->z * rhs.s;
+		return CQuaternion(r_s, r_x, r_y, r_z);
+	};
+	CQuaternion Conjugate() {
+		return CQuaternion(s, -x, -y, -z);
+	};
+
+public:
+	float s, x, y, z;
+};
+
+
+CQuaternion CreateQuaternionWithThetha(CVector axis, double angle) {
+	return CQuaternion(cos(angle / 2.0),
+		axis.x * sin(angle / 2.0),
+		axis.y * sin(angle / 2.0),
+		axis.z * sin(angle / 2.0));
+}
+
+CVector QuaternionRotation(CQuaternion q, CVector v) {
+	CQuaternion vq;
+
+	vq = CQuaternion(0, v.x, v.y, v.z);
+	vq = q * vq;
+	vq = vq * q.Conjugate();
+	return CVector(vq.x, vq.y, vq.z);
+}
+
+void QuaternionRotationMatrix(CQuaternion q, GLfloat * m) {
+	CVector x, y, z;
+	CVector x_t, y_t, z_t;
+
+	x = CVector(1, 0, 0);
+	y = CVector(0, 1, 0);
+	z = CVector(0, 0, 1);
+
+	x_t = QuaternionRotation(q, x);
+	y_t = QuaternionRotation(q, y);
+	z_t = QuaternionRotation(q, z);
+
+	m[0] = x_t.x;
+	m[1] = x_t.y;
+	m[2] = x_t.z;
+	m[3] = 0;
+	m[4] = x.DotProduct(y_t);
+	m[5] = y.DotProduct(y_t);
+	m[6] = z.DotProduct(y_t);
+	m[7] = 0;
+
+	m[8] = x.DotProduct(z_t);
+	m[9] = y.DotProduct(z_t);
+	m[10] = z.DotProduct(z_t);
+	m[11] = 0;
+
+	m[12] = 0;
+	m[13] = 0;
+	m[14] = 0;
+	m[15] = 1;
+}
+
+CVector downwards = CVector(0, 0, 1);
+CVector ball_position = CVector(0, 1, 0);
+CQuaternion ball_orientation = CQuaternion(0, 0, 1, 0);
+//End Dr. Jeong Code
+
+//Begin Claude C Code
+/*void display() {
+	GLfloat rotation[16];
+	float d;
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glLoadIdentity();
+	glTranslatef(0, 0, -20);
+
+	//creating spheres with quaternion implemented
+	glPushMatrix();
+	glScalef(2, 2, 2);
+	QuaternionRotationMatrix(ball_orientation, rotation);
+	glMultMatrixf(rotation);
+	glColor3f(1, 0, 0);
+	glutSolidSphere(2, 15, 15);   // red sphere
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(rotatedegree, 0, 1, 0);
+	glScalef(.6, .6, .6);
+	glTranslatef(7, 0, 7);
+
+	glMultMatrixf(rotation);
+	glColor3f(0, 0, 1);
+
+	glutSolidSphere(1, 15, 15);		 //blue sphere
+	glPopMatrix();
+	glutSwapBuffers();
+}
+*/
+//For continuous rotation
+
+
+//End Claude C
 void drawText(void *, const char*, float , float );
 void displayTitle();
 void draw_cube(float, float, float);
@@ -23,6 +250,14 @@ struct Mouse
 	int ButtonClicked;	//is the left button pressed?	
 };
 typedef struct Mouse Mouse;
+
+struct coordinates {
+	double x;
+	double y;
+	double z;
+};
+
+std::vector<coordinates> Coordinates;
 Mouse mouse = {0,0,0};
 GLdouble winX,winY,winZ;
 int winw = 640, winh = 480;
@@ -164,7 +399,6 @@ void TheButtonCallback()
 	printf("I have been called\n");
 }
 const double cube_size = 1;
-double gap = 0.04;
 int n = 0;
 double minValue;
 char title[] = "Cube";
@@ -172,8 +406,7 @@ int refreshMills = 500;
 char selector = ' ';
 float selector_value ;
 int rotX = 0,rotY=0;
-int angle;
-int xc = 0, yc = 0, zc = 0;
+int angle,angley;
 void Buttons()
 {
 	twoD();
@@ -207,6 +440,21 @@ void drawBack()
 		window = 0;
 	glutPostRedisplay();
 }
+int choice=0;
+float ang[3][3][3];
+
+void angle1(double a)
+{
+	for (int i = 0; i < 2; i++)
+		for (int j = 0; j < 2; j++)
+			for (int k = 0; k < 2; k++)
+			{
+				if (i == 0)
+					ang[i][j][k] = a;
+				else
+					ang[i][j][k] = 0;
+			}
+}
 void drawCube()
 {
 	threeD();
@@ -218,8 +466,26 @@ void drawCube()
 	int count = 0;
 	
 	glPushMatrix();
-	glRotatef(rotX, 1.0, 0.0, 0.0); // rotate in y axis
-	glRotatef(rotY, 0.0, 1.0, 0.0); // rotate in x axis
+	//gluLookAt(0.5, 0.5, 0.5, 0, 0, 0, 0, 1, 0);
+	GLfloat rotation[16];
+	CVector camera = CVector(0, 0, 0);
+	//CQuaternion q = CreateQuaternionWithThetha(CVector(0, 1, 0), rotY);
+	//CVector v = QuaternionRotation(q, CVector(1, 0, 0));
+	//CQuaternion q1 =CQuaternion(0, v.x,v.y,v.z);
+	//QuaternionRotationMatrix(q1, rotation);
+	//glMultMatrixf(rotation);
+
+	
+	//CQuaternion q11 = CreateQuaternionWithThetha(CVector(1, 0, 0), rotX);
+	//CVector v1 = QuaternionRotation(q11, CVector(0, 1, 0));
+	//CQuaternion q10 = CQuaternion(0, v1.x, v1.y, v1.z);
+	//QuaternionRotationMatrix(q10, rotation);
+	//glMultMatrixf(rotation);
+	glRotatef(rotY, 0, 1, 0);
+	glRotatef(rotX, 1, 0, 0);
+
+
+
 	//GLfloat matrixf[16];
    //Generic rubiks cube
 	FOR(i, minValue, -minValue, cube_size) {// step through x axis				
@@ -228,43 +494,56 @@ void drawCube()
 
 			FOR(k, minValue, -minValue, cube_size)// step through z axis
 			{
-
-				x = i + i * gap;
-				y = (j)+j * gap;
-				z = (k)+k * gap;
-
-				if (minValue + k * gap == z)
-					zc = -1;
-				if (-minValue + k * gap == z)
-					zc = 1;
-				if (minValue + j * gap == y)
-					yc = -1;
-				if (-minValue + j * gap == y)
-					yc = 1;
-				if (minValue + i * gap == x)
-					xc = -1;
-				if (-minValue + i * gap == x)
-					xc = 1;
-				glPushMatrix();
-
+				
+				coordinates c;
+				c.x = i;
+				c.y = j;
+				c.z = k;
+				Coordinates.push_back(c);
+				GLfloat rotation1[16];
+				/*glPushMatrix();
 				switch (selector)
 				{
-				case 'i': if (i == selector_value) glRotatef(angle, 1, 0, 0); break;
-				case 'j': if (j == selector_value) glRotatef(angle, 0, 1, 0); break;
+					
+				case 'i': if (i == selector_value) {
+					//QuaternionRotationMatrix(CQuaternion(0,1,0,0),rotation);
+					// glMultMatrixf(rotation);
+					glRotatef(angle,1, 0, 0);
+					
+					CQuaternion q111 = CreateQuaternionWithThetha(CVector(1, 0, 0), PI/2);
+					
+					QuaternionRotationMatrix(q111, rotation1);
+				
+					//glMultMatrixf(rotation1);
+
+					
+					
+				}break;
+				case 'j': if (j == selector_value) {
+					glMultMatrixf(rotation1);
+					glRotatef(angle, 0, 1, 0);
+				
+					
+				}break;
 				case 'k': if (k == selector_value) glRotatef(angle, 0, 0, 1); break;
+		
+					
 
-				}
+				}*/
+				//vector<cube_rotate> lrot = cube_rotations[i][j][k];
 
-				//glGetFloatv(GL_MODELVIEW_MATRIX, matrixf);
-				//glLoadMatrixf(matrixf);
-				draw_cube(x, y, z);
-				glPopMatrix();
-				//std::cout << x<< std::endl << y<< std::endl << z<< std::endl;
+				draw_cube(i, j, k);
+								//if(!choice)
+					//render();
+				
+
 			}
 		}
 	}
 	
 	glPopMatrix();
+	//gluLookAt(0, 0, 0, 0, 0, 0, 0, 1, 0);
+
 	drawBack();
 
 }
@@ -283,27 +562,16 @@ void display() {
 	}
 	else
 		drawCube();
-	//Button bstart = Button(-1, -1, 2.5, 1.15, 0, 0, "START", TheButtonCallback);
-	
-	//bstart.ButtonDraw();
-	//Button bstart1 = Button(-3, -3, 2.5, 1.15, 0, 0, "START1", TheButtonCallback);
-	//bstart1.ButtonDraw();
-	//displayTitle();
-	//threeD();
-	//drawCube();
 	glutSwapBuffers();
 	glutPostRedisplay();
 }
 void draw_cube(float x, float y, float z)
 {
 
-	//vector<cube_rotate> rot = cubeRotations[x][y][z];
-	//glLoadIdentity();
-	//glRotatef(angle, 0, 0, 0);
+	double gap = 0.04;
 	glPushMatrix();
-	 glTranslatef(x,y,z);
-	
-	if (zc == -1)
+	 glTranslatef(x+x*gap,y+y*gap,z+z*gap);	
+	if (minValue == z)
 		glColor3f(1.0f, 0.5f, 0.0f);
 	else
 		glColor3f(0.4, 0.4, 0.4);
@@ -314,7 +582,7 @@ void draw_cube(float x, float y, float z)
 	glVertex3f(-cube_size / 2, -cube_size / 2, -cube_size / 2);
 	glVertex3f(-cube_size / 2, cube_size / 2, -cube_size / 2);
 	glEnd();
-	if(xc == -1)
+	if(minValue == x)
 		glColor3f(0.0f, 0.0f, 1.0f);
 	else
 		glColor3f(0.4, 0.4, 0.4);
@@ -326,7 +594,7 @@ void draw_cube(float x, float y, float z)
 	glVertex3f(-cube_size / 2, -cube_size / 2, cube_size / 2);
 	glEnd();
 
-	if (yc == -1)
+	if (minValue == y)
 		glColor3f(1.0f, 1.0f, 0.0f);
 	else
 		glColor3f(0.4, 0.4, 0.4);
@@ -338,7 +606,7 @@ void draw_cube(float x, float y, float z)
 	glVertex3f(-cube_size / 2, -cube_size / 2, cube_size / 2);
 	glEnd();
 
-	if(xc == 1)
+	if(minValue == -x)
 		glColor3f(0.0f, 1.0f, 0.0f);
 	else
 		glColor3f(0.4, 0.4, 0.4);
@@ -350,7 +618,7 @@ void draw_cube(float x, float y, float z)
 	glVertex3f(cube_size / 2, cube_size / 2, -cube_size / 2);
 	glEnd();
 
-	if(yc == 1)
+	if(minValue == -y)
 	glColor3f(1.0f, 1.0f, 1.0f);
 	else
 		glColor3f(0.4, 0.4, 0.4);
@@ -362,7 +630,7 @@ void draw_cube(float x, float y, float z)
 	glVertex3f(cube_size / 2, cube_size / 2, -cube_size / 2);
 	glEnd();
 
-	if (zc == 1)
+	if (minValue == -z)
 		glColor3f(1.0f, 0.0f, 0.0f);
 	else
 		glColor3f(0.4, 0.4, 0.4);
@@ -445,13 +713,14 @@ void keyboardFunc(unsigned char key, int x, int y)
 	case 'R': // right
 	case 'r':
 		rotY += 24;
-		std::cout << "l" << std::endl;
+		
+		std::cout << "r" << std::endl;
 		break;
 	
 	case 'L': // left
 	case 'l':
 		rotY -= 24;
-		std::cout << "r" << std::endl;
+		std::cout << "l" << std::endl;
 		break; 
 	
 	case 'U': //Up
@@ -468,12 +737,12 @@ void keyboardFunc(unsigned char key, int x, int y)
 	case 'i'://side face antiClockwise
 		selector = 'i';
 		selector_value = minValue;
-		angle -= 45;
+		angle += 22;
 		break;
 	case 'I'://side face clockwise
 		selector = 'i';
 		selector_value = minValue;
-			angle+= 90;
+			angle+= 22;
 			break;
 	case 'j':
 		selector = 'i';
@@ -495,12 +764,12 @@ void keyboardFunc(unsigned char key, int x, int y)
 	case 'K':
 		selector = 'i';
 		selector_value = minValue + 2*cube_size;
-		angle += 45;
+		angley += 45;
 		break;
 	case 'q':
 		selector = 'j';
 		selector_value = minValue;
-		angle -= 45;
+		angley -= 45;
 		break;
 	case 'Q':
 		selector = 'j';
