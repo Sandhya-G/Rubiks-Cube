@@ -1,4 +1,4 @@
-
+#include<stdlib.h>
 #include <GL/glut.h>  
 #include<iostream>
 #include<vector>
@@ -197,7 +197,7 @@ void Buttons()
 	}
 	glutPostRedisplay();
 }
-void drawBack()
+void drawBack0()
 {
 	twoD();
 	Button back = Button(-4.5, -3.5, 1.5, 0.75, 0, "BACK");
@@ -206,6 +206,49 @@ void drawBack()
 	if (back.OnButtonClicked())
 		window = 0;
 	glutPostRedisplay();
+}
+void drawBack1()
+{
+	twoD();
+	Button back = Button(-4.5, -3.5, 1.5, 0.75, 0, "BACK");
+	back.ButtonPassive();
+	back.ButtonDraw();
+	if (back.OnButtonClicked())
+		window = 1;
+	glutPostRedisplay();
+}
+
+void draw_in()   //button
+{
+	twoD();
+	Button in = Button(-2.0,-3.5,3.5,0.75,0,"INSTRUCTIONS");
+	in.ButtonPassive();
+	in.ButtonDraw();
+	if(in.OnButtonClicked())
+			window=2;
+	glutPostRedisplay();
+}
+	 
+
+
+void draw_ins()   //instructions
+{
+		glPushMatrix();
+	glTranslatef(0.5, 0, 0);
+	    
+		glColor3f(1.0, 1.0, 1.0);
+		drawText(GLUT_BITMAP_HELVETICA_18, "L/l-Rotate cube antoclockwise", -0.5, -1.0+0.5);
+		drawText(GLUT_BITMAP_HELVETICA_18, "R/r-Rotate cube clockwise", -0.5, -1.5+0.5);
+		drawText(GLUT_BITMAP_HELVETICA_18, "U/u-Rotate cube upwards", -0.5, -2.0+0.5);
+		drawText(GLUT_BITMAP_HELVETICA_18, "D/d-Rotate cube downwards",-0.5, -2.5+0.5);
+	    
+
+		glPopMatrix();
+		drawBack1();
+		
+		
+
+	
 }
 void drawCube()
 {
@@ -265,7 +308,8 @@ void drawCube()
 	}
 	
 	glPopMatrix();
-	drawBack();
+	draw_in();
+	drawBack0();
 
 }
 
@@ -276,12 +320,12 @@ void display() {
 	glMatrixMode(GL_MODELVIEW);     // To operate on model-view matrix
 	glLoadIdentity(); 
 	glTranslatef(0, 0, -10);
-	if (!window)
+	if (window == 0)
 	{
 		Buttons();
 		displayTitle();
 	}
-	else
+	else if(window == 1)
 		drawCube();
 	//Button bstart = Button(-1, -1, 2.5, 1.15, 0, 0, "START", TheButtonCallback);
 	
@@ -291,8 +335,13 @@ void display() {
 	//displayTitle();
 	//threeD();
 	//drawCube();
+	else 
+	   draw_ins();
+		
+	
 	glutSwapBuffers();
 	glutPostRedisplay();
+	
 }
 void draw_cube(float x, float y, float z)
 {
