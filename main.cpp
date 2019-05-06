@@ -2,246 +2,152 @@
 #include <GL/glut.h>  
 #include<iostream>
 #include<vector>
+#include <unordered_map> 
 #include<cmath>
+
 
 #define FOR(i,a,b,increment) for(float i=a;i<=b;i=i+increment)
 #define FORD(i,a,b,decrement) for(float i=a;i>=b;i=i-decrement)
 #define REP(i,n) for(int i=0;i<n;++i)
-#define PI 3.14
+#define mp(a,b) make_pair(a,b)
+#define pb(x) push_back(x);
+
+#define PI 3.14159265
+#define toRad(x) ((x)*(PI/180.0))
+
 using namespace std;
-struct cube_rotate {
 
-	GLfloat angle, x, y, z;
 
-};
-GLint rot_x, rot_y, crement, x_0, x_k, y_0, y_k, z_0, z_k;
 
-vector<cube_rotate> cube_rotations[3][3][3];
-void apply_rotation(GLfloat angle) {
 
-	vector<cube_rotate> face[3][3];
-	int index;
-	cube_rotate rotation;
-
-	// copy face to be rotated
-	// apply rotation to face
-	for (int i = 0; i < 3; ++i)
-		for (int j = 0; j < 3; ++j) {
-
-			index = 2 - j % 3;
-
-			if (x_0 == x_k) {
-				rotation = { angle, 1.0, 0.0, 0.0 };
-				face[index][i] = cube_rotations[x_k][i][j];
-			}
-
-			if (y_0 == y_k) {
-				rotation = { angle, 0.0, 1.0, 0.0 };
-				face[index][i] = cube_rotations[j][y_k][i];
-			}
-
-			if (z_0 == z_k) {
-				rotation = { -1 * angle, 0.0, 0.0, 1.0 };
-				face[index][i] = cube_rotations[j][i][z_k];
-			}
-
-			face[index][i].push_back(rotation);
-
-		}
-
-	// copy back rotated face
-	for (int i = 0; i < 3; ++i)
-		for (int j = 0; j < 3; ++j) {
-
-			if (x_0 == x_k)
-				cube_rotations[x_k][i][j] = face[i][j];
-
-			if (y_0 == y_k)
-				cube_rotations[j][y_k][i] = face[i][j];
-
-			if (z_0 == z_k)
-				cube_rotations[j][i][z_k] = face[i][j];
-		}
-
-}
-
-// reset face selection parameters
-void reset_selected_face() {
-
-	x_0 = 0;
-	x_k = 2;
-	y_0 = 0;
-	y_k = 2;
-	z_0 = 0;
-	z_k = 2;
-
-}
-/*stuff to do
-make simulatenous face rotations possible use quaternions or something
-bfs
-*/
-//typedef void(*ButtonCallback)();
-#define ROT(x, y, costheta, sintheta) x*costheta - y*sintheta, x*sintheta + y*costheta
-GLfloat rotatedegree = 0;
-
-//Code written by Dr. Jeong - Professor of Computer Science at the University of the District of Columbia (UDC)
-class CVector {
+class Point3D
+{
 public:
-	CVector() { x = y = z = 0; };
-	CVector(float x, float y, float z) { this->x = x; this->y = y; this->z = z; };
-	CVector operator+(const CVector& rhs) {
-		double r_x, r_y, r_z;
-		r_x = this->x + rhs.x;
-		r_y = this->y + rhs.y;
-		r_z = this->z + rhs.z;
-		return CVector(r_x, r_y, r_z);
-	};
-	CVector operator=(const CVector& rhs)
+	double x, y, z;
+	Point3D()
 	{
-		x = rhs.x; y = rhs.y; z = rhs.z;
-		return *this;
-	};
-	CVector CrossProduct(CVector rhs) {
-		return CVector(y * rhs.z - z * rhs.y,
-			z * rhs.x - x * rhs.z,
-			x * rhs.y - y * rhs.x);
-	};
-	CVector operator*(float constant) {
-		return CVector(x * constant, y * constant, z * constant);
-	};
-
-	CVector vector_scale(float constant, CVector v) {
-		return CVector(constant * v.x, constant * v.y, constant * v.z);
+		x = 0;
+		y = 0;
+		z = 0;
 	}
+	Point3D(double px,double py, double pz)
+	{
+		x = px;
+		y = py;
+		z = pz;
 
-	float Size() {
-		return sqrt(x * x + y * y + z * z);
-	};
-
-	CVector Norm() {
-		return *this* (1 / this->Size());
 	}
-	float DotProduct(CVector rhs) {
-		return (x * rhs.x + y * rhs.y + z * rhs.z);
-	};
-
-public:
-	float x, y, z;
+	
 };
 
-
-class CQuaternion {
+// --------------------------------------------------------------------
+//		Quatenions
+//---------------------------------------------------------------------
+class Quaternion {
 public:
-	CQuaternion() { s = x = y = z = 0; };
-	CQuaternion(float s, float x, float y, float z) { this->s = s; this->x = x; this->y = y; this->z = z; };
-	CQuaternion operator*(const CQuaternion& rhs) {
-		double r_s, r_x, r_y, r_z;
-		r_s = this->s * rhs.s - this->x * rhs.x - this->y * rhs.y - this->z * rhs.z;
-		r_x = this->s * rhs.x + this->x * rhs.s + this->y * rhs.z - this->z * rhs.y;
-		r_y = this->s * rhs.y - this->x * rhs.z + this->y * rhs.s + this->z * rhs.x;
-		r_z = this->s * rhs.z + this->x * rhs.y - this->y * rhs.x + this->z * rhs.s;
-		return CQuaternion(r_s, r_x, r_y, r_z);
-	};
-	CQuaternion Conjugate() {
-		return CQuaternion(s, -x, -y, -z);
-	};
+	double w;
+	Point3D u;
 
-public:
-	float s, x, y, z;
+	inline void Multiply(const Quaternion q)
+	{
+		
+		Quaternion tmp;
+		tmp.u.x = ((w * q.u.x) + (u.x * q.w) + (u.y * q.u.z) - (u.z * q.u.y));
+		tmp.u.y = ((w * q.u.y) - (u.x * q.u.z) + (u.y * q.w) + (u.z * q.u.x));
+		tmp.u.z = ((w * q.u.z) + (u.x * q.u.y) - (u.y * q.u.x) + (u.z * q.w));
+		tmp.w = ((w * q.w) - (u.x * q.u.x) - (u.y * q.u.y) - (u.z * q.u.z));
+		*this = tmp;
+	}
+
+	inline double Norm()
+	{
+		return sqrt(u.x * u.x + u.y * u.y + u.z * u.z + w * w);
+	}
+
+	inline void Conjugate()
+	{
+		u.x = -u.x;
+		u.y = -u.y;
+		u.z = -u.z;
+	}
+
+	inline void Inverse()
+	{
+		double norm = Norm();
+		Conjugate();
+		u.x /= norm;
+		u.y /= norm;
+		u.z /= norm;
+		w /= norm;
+	}
+
+
+	void ExportToMatrix(float matrix[16])
+	{
+		float wx, wy, wz, xx, yy, yz, xy, xz, zz;
+
+		// adapted from Shoemake
+		xx = u.x * u.x;
+		xy = u.x * u.y;
+		xz = u.x * u.z;
+		yy = u.y * u.y;
+		zz = u.z * u.z;
+		yz = u.y * u.z;
+
+		wx = w * u.x;
+		wy = w * u.y;
+		wz = w * u.z;
+
+		matrix[0] = 1.0f - 2.0f * (yy + zz);
+		matrix[4] = 2.0f * (xy - wz);
+		matrix[8] = 2.0f * (xz + wy);
+		matrix[12] = 0.0;
+
+		matrix[1] = 2.0f * (xy + wz);
+		matrix[5] = 1.0f - 2.0f * (xx + zz);
+		matrix[9] = 2.0f * (yz - wx);
+		matrix[13] = 0.0;
+
+		matrix[2] = 2.0f * (xz - wy);
+		matrix[6] = 2.0f * (yz + wx);
+		matrix[10] = 1.0f - 2.0f * (xx + yy);
+		matrix[14] = 0.0;
+
+		matrix[3] = 0;
+		matrix[7] = 0;
+		matrix[11] = 0;
+		matrix[15] = 1;
+	}
+
 };
 
+Quaternion RotateAboutAxis(Point3D pt, double angle, Point3D axis)
+{
+	Quaternion q, p, qinv;
 
-CQuaternion CreateQuaternionWithThetha(CVector axis, double angle) {
-	return CQuaternion(cos(angle / 2.0),
-		axis.x * sin(angle / 2.0),
-		axis.y * sin(angle / 2.0),
-		axis.z * sin(angle / 2.0));
+	q.w = cos(0.5 * angle);
+	q.u.x = sin(0.5 * angle) * axis.x;
+	q.u.y = sin(0.5 * angle) * axis.y;
+	q.u.z = sin(0.5 * angle) * axis.z;
+
+	p.w = 0;
+	p.u = pt;
+
+	qinv = q;
+	qinv.Inverse();
+
+	q.Multiply(p);
+	q.Multiply(qinv);
+
+	return q;
 }
+//----------------------------------------------------------------------
+//	Quaternions ending
+//----------------------------------------------------------------------
 
-CVector QuaternionRotation(CQuaternion q, CVector v) {
-	CQuaternion vq;
-
-	vq = CQuaternion(0, v.x, v.y, v.z);
-	vq = q * vq;
-	vq = vq * q.Conjugate();
-	return CVector(vq.x, vq.y, vq.z);
-}
-
-void QuaternionRotationMatrix(CQuaternion q, GLfloat * m) {
-	CVector x, y, z;
-	CVector x_t, y_t, z_t;
-
-	x = CVector(1, 0, 0);
-	y = CVector(0, 1, 0);
-	z = CVector(0, 0, 1);
-
-	x_t = QuaternionRotation(q, x);
-	y_t = QuaternionRotation(q, y);
-	z_t = QuaternionRotation(q, z);
-
-	m[0] = x_t.x;
-	m[1] = x_t.y;
-	m[2] = x_t.z;
-	m[3] = 0;
-	m[4] = x.DotProduct(y_t);
-	m[5] = y.DotProduct(y_t);
-	m[6] = z.DotProduct(y_t);
-	m[7] = 0;
-
-	m[8] = x.DotProduct(z_t);
-	m[9] = y.DotProduct(z_t);
-	m[10] = z.DotProduct(z_t);
-	m[11] = 0;
-
-	m[12] = 0;
-	m[13] = 0;
-	m[14] = 0;
-	m[15] = 1;
-}
-
-CVector downwards = CVector(0, 0, 1);
-CVector ball_position = CVector(0, 1, 0);
-CQuaternion ball_orientation = CQuaternion(0, 0, 1, 0);
-//End Dr. Jeong Code
-
-//Begin Claude C Code
-/*void display() {
-	GLfloat rotation[16];
-	float d;
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glLoadIdentity();
-	glTranslatef(0, 0, -20);
-
-	//creating spheres with quaternion implemented
-	glPushMatrix();
-	glScalef(2, 2, 2);
-	QuaternionRotationMatrix(ball_orientation, rotation);
-	glMultMatrixf(rotation);
-	glColor3f(1, 0, 0);
-	glutSolidSphere(2, 15, 15);   // red sphere
-	glPopMatrix();
-
-	glPushMatrix();
-	glRotatef(rotatedegree, 0, 1, 0);
-	glScalef(.6, .6, .6);
-	glTranslatef(7, 0, 7);
-
-	glMultMatrixf(rotation);
-	glColor3f(0, 0, 1);
-
-	glutSolidSphere(1, 15, 15);		 //blue sphere
-	glPopMatrix();
-	glutSwapBuffers();
-}
-*/
-//For continuous rotation
-
-
-//End Claude C
 void drawText(void *, const char*, float , float );
 void displayTitle();
-void draw_cube(float, float, float);
+void draw_cube(float, float, float,int);
 
 struct Mouse
 {
@@ -250,14 +156,63 @@ struct Mouse
 	int ButtonClicked;	//is the left button pressed?	
 };
 typedef struct Mouse Mouse;
+static int top[3][3] = { {0,0,0},{0,0,0},{0,0,0} },
+righ[3][3] = { {1,1,1},{1,1,1},{1,1,1} },
+front[3][3] = { {2,2,2},{2,2,2},{2,2,2} },
+back[3][3] = { {3,3,3},{3,3,3},{3,3,3} },
+bottom[3][3] = { {4,4,4},{4,4,4},{4,4,4} },
+lef[3][3] = { {5,5,5},{5,5,5},{5,5,5} },
+temp[3][3];
+class Color {
+	public:
+		int Top;
+		int Left;
+		int Right;
+		int Front;
+		int Back;
+		int Bottom;
 
+		Color()
+		{
+			Top = top[0][0];
+			Bottom =bottom[0][0];
+			Right =righ[0][0];
+			Left = lef[0][0];
+			Front = front[0][0];
+			Back = back[0][0];
+
+		}
+
+		Color(int pt, int pb, int pr, int pl, int pf, int pba)
+		{
+			Top = pt;
+			Bottom = pb;
+			Right = pr;
+			Left = pl;
+			Front = pf;
+			Back = pba;
+			
+		}
+};
 struct coordinates {
-	double x;
-	double y;
-	double z;
+	public:	
+		double x;
+		double y;
+		double z;
+		coordinates(double px, double py, double pz)
+		{
+			x = px;
+			y = py;
+			z = pz;
+		}
+	
+		bool operator==(const coordinates & c) const
+		{
+			return (c.x == x && c.y == y && c.z == z);
+		}
 };
 
-std::vector<coordinates> Coordinates;
+
 Mouse mouse = {0,0,0};
 GLdouble winX,winY,winZ;
 int winw = 640, winh = 480;
@@ -288,6 +243,7 @@ void WindowCoordinates(GLdouble x, GLdouble y)
 	gluProject(x,y,0.0,modelview,projection,viewport,&winX,&winY,&winZ);
 }
 
+//-----------------------------------------------------------------------
 class Button {
 	public:
 	    float x;				
@@ -398,15 +354,14 @@ void TheButtonCallback()
 {
 	printf("I have been called\n");
 }
+//-----------------------------------------------------------------------
 const double cube_size = 1;
 int n = 0;
 double minValue;
-char title[] = "Cube";
-int refreshMills = 500;
+char title[] = "Rubik's Cube";
 char selector = ' ';
 float selector_value ;
-int rotX = 0,rotY=0;
-int angle,angley;
+int rotX = 0, rotY = 0, angle = 0, x1 = 0, z1 =0, x2 = 0,y2 =0, z2 =0, x3 = 0, y3 =0, z3 = 0;
 void Buttons()
 {
 	twoD();
@@ -440,99 +395,408 @@ void drawBack()
 		window = 0;
 	glutPostRedisplay();
 }
-int choice=0;
-float ang[3][3][3];
+int choice1=0;
 
-void angle1(double a)
+
+
+
+
+vector<Color> Colors;
+
+/*
+	on face rotations
+	0 1 2		6 3	0		
+	3 4 5		7 4	1
+	6 7 8		8 5	2
+*/
+
+void updateColors(char a)
 {
-	for (int i = 0; i < 2; i++)
-		for (int j = 0; j < 2; j++)
-			for (int k = 0; k < 2; k++)
-			{
-				if (i == 0)
-					ang[i][j][k] = a;
-				else
-					ang[i][j][k] = 0;
-			}
+
+	if (a == 'r')
+	{
+		int temp;
+		temp = righ[0][0];
+		righ[0][0] = righ[2][0];
+		righ[2][0] = righ[2][2];
+		righ[2][2] = righ[0][2];
+		righ[0][2] = temp;
+		temp = righ[1][0];
+		righ[1][0] = righ[2][1];
+		righ[2][1] = righ[1][2];
+		righ[1][2] = righ[0][1];
+		righ[0][1] = temp;
+	}
+	if (a == 't')
+
+
+
+	{
+		int temp;
+		temp = top[0][0];
+		top[0][0] = top[2][0];
+		top[2][0] = top[2][2];
+		top[2][2] = top[0][2];
+		top[0][2] = temp;
+		temp = top[1][0];
+		top[1][0] = top[2][1];
+		top[2][1] = top[1][2];
+		top[1][2] = top[0][1];
+		top[0][1] = temp;
+	}
+	if (a == 'f')
+	{
+		int temp;
+		temp = front[0][0];
+		front[0][0] = front[2][0];
+		front[2][0] = front[2][2];
+		front[2][2] = front[0][2];
+		front[0][2] = temp;
+		temp = front[1][0];
+		front[1][0] = front[2][1];
+		front[2][1] = front[1][2];
+		front[1][2] = front[0][1];
+
+
+
+		front[0][1] = temp;
+	}
+
+
+	/* 0 1 2	2 5 8
+	   3 4 5	1 4 7
+	   6 7 8	0 3 6	               */
+	if (a == 'l')
+	{
+		int temp;
+		temp = lef[0][0];
+		lef[0][0] = lef[0][2];
+		lef[0][2] = lef[2][2];
+		lef[2][2] = lef[2][0];
+		lef[2][0] = temp;
+		temp = lef[1][0];
+		lef[1][0] = lef[0][1];
+		lef[0][1] = lef[1][2];
+		lef[1][2] = lef[2][1];
+		lef[2][1] = temp;
+	}
+	if (a == 'k')
+	{
+		int temp;
+		temp = back[0][0];
+		back[0][0] = back[2][0];
+		back[2][0] = back[2][2];
+		back[2][2] = back[0][2];
+		back[0][2] = temp;
+		temp = back[1][0];
+
+
+
+		back[1][0] = back[2][1];
+		back[2][1] = back[1][2];
+		back[1][2] = back[0][1];
+		back[0][1] = temp;
+	}
+
+	if (a == 'b')
+	{
+		int temp;
+		temp = bottom[0][0];
+		bottom[0][0] = bottom[2][0];
+		bottom[2][0] = bottom[2][2];
+		bottom[2][2] = bottom[0][2];
+		bottom[0][2] = temp;
+		temp = bottom[1][0];
+		bottom[1][0] = bottom[2][1];
+		bottom[2][1] = bottom[1][2];
+		bottom[1][2] = bottom[0][1];
+		bottom[0][1] = temp;
+	}
 }
-void drawCube()
+
+void topc()
 {
+
+
+
+	updateColors('t');
+	int temp1 = front[0][0];
+	int temp2 = front[0][1];
+	int temp3 = front[0][2];
+
+	front[0][0] = righ[0][0];
+	front[0][1] = righ[0][1];
+	front[0][2] = righ[0][2];
+
+	righ[0][0] = back[0][0];
+	righ[0][1] = back[0][1];
+	righ[0][2] = back[0][2];
+
+	back[0][0] = lef[0][0];
+	back[0][1] = lef[0][1];
+	back[0][2] = lef[0][2];
+
+	lef[0][0] = temp1;
+	lef[0][1] = temp2;
+	lef[0][2] = temp3;
+
+}
+
+void frontc()
+{
+
+
+
+	updateColors('f');
+	int temp1 = lef[0][2];
+	int temp2 = lef[1][2];
+	int temp3 = lef[2][2];
+
+	lef[0][2] = bottom[0][0];
+	lef[1][2] = bottom[0][1];
+	lef[2][2] = bottom[0][2];
+
+	bottom[0][0] = righ[2][0];
+	bottom[0][1] = righ[1][0];
+	bottom[0][2] = righ[0][0];
+
+	righ[2][0] = top[2][2];
+	righ[1][0] = top[2][1];
+	righ[0][0] = top[2][0];
+
+	top[2][2] = temp1;
+	top[2][1] = temp2;
+	top[2][0] = temp3;
+}
+
+void rightc()
+{
+	updateColors('r');
+
+
+
+	int temp1 = top[0][0];
+	int temp2 = top[1][0];
+	int temp3 = top[2][0];
+
+	top[0][0] = back[0][0];
+	top[1][0] = back[1][0];
+	top[2][0] = back[2][0];
+
+	back[0][0] = bottom[0][0];
+	back[1][0] = bottom[1][0];
+	back[2][0] = bottom[2][0];
+	
+	bottom[0][0] = front[2][0];
+	bottom[1][0] = front[1][0];
+	bottom[2][0] = front[0][0];
+
+	front[0][0] = temp1;
+	front[1][0] = temp2;
+	front[2][0] = temp3;
+
+
+	
+}
+
+void leftc()
+{
+
+
+
+	updateColors('l');
+	int temp1 = front[0][0];
+	int temp2 = front[1][0];
+	int temp3 = front[2][0];
+
+	front[0][0] = top[0][0];
+	front[1][0] = top[1][0];
+	front[2][0] = top[2][0];
+
+	top[0][0] = back[2][0];
+	top[1][0] = back[1][0];
+	top[2][0] = back[0][0];
+
+	back[0][0] = bottom[0][0];
+	back[1][0] = bottom[1][0];
+	back[2][0] = bottom[2][0];
+
+
+	bottom[0][0] = temp3;
+	bottom[1][0] = temp2;
+	bottom[2][0] = temp1;
+}
+
+void backc()
+{
+
+
+
+	updateColors('k');
+	int temp1 = top[0][0];
+	int temp2 = top[0][1];
+	int temp3 = top[0][2];
+
+	top[0][0] = righ[0][2];
+	top[0][1] = righ[1][2];
+	top[0][2] = righ[2][2];
+
+	righ[0][2] = bottom[2][2];
+	righ[1][2] = bottom[2][1];
+	righ[2][2] = bottom[2][0];
+
+	bottom[2][2] = lef[2][0];
+	bottom[2][1] = lef[1][0];
+	bottom[2][0] = lef[0][0];
+
+	lef[2][0] = temp1;
+	lef[1][0] = temp2;
+	lef[0][0] = temp3;
+}
+
+
+void bottomc()
+{
+
+
+
+	updateColors('b');
+	int temp1 = front[2][0];
+	int temp2 = front[2][1];
+	int temp3 = front[2][2];
+
+	front[2][0] = lef[2][0];
+	front[2][1] = lef[2][1];
+	front[2][2] = lef[2][2];
+
+	lef[2][0] = back[2][0];
+	lef[2][1] = back[2][1];
+	lef[2][2] = back[2][2];
+
+	back[2][0] = righ[2][0];
+	back[2][1] = righ[2][1];
+	back[2][2] = righ[2][2];
+
+	righ[2][0] = temp1;
+	righ[2][1] = temp2;
+	righ[2][2] = temp3;
+
+}
+
+void bindColor()
+{
+	Colors.pb(Color(top[0][0], 6, 6, lef[0][0], 6, back[0][0]));
+	Colors.pb(Color(top[0][1], 6, 6,6 , 6, back[0][1]));
+	Colors.pb(Color(top[0][2], 6,righ[0][0] , 6, 6, back[0][2]));
+	Colors.pb(Color(6, 6, 6, lef[1][0], 6, back[1][0]));
+	Colors.pb(Color(6, 6, 6, 6, 6, back[1][1]));
+	Colors.pb(Color(6, 6, righ[1][0], 6, 6, back[1][2]));
+	Colors.pb(Color(6, bottom[0][0], 6, lef[2][0], 6, back[2][0]));
+	Colors.pb(Color(6, bottom[0][1], 6, 6, 6, back[2][1]));
+	Colors.pb(Color(6, bottom[0][2], righ[2][0], 6, 6, back[2][2]));
+	
+	Colors.pb(Color(top[1][0], 6, 6, lef[0][1], 6, 6));
+	Colors.pb( Color(top[1][1], 6, 6, 6, 6, 6));
+	Colors.pb( Color(top[1][2], 6, righ[0][1], 6, 6, 6));
+	Colors.pb( Color(6, 6, 6, lef[1][1], 6, 6));
+	Colors.pb( Color(6, 6, 6, 6, 6, 6));
+	Colors.pb( Color(6, 6, righ[1][1], 6, 6, 6));
+	Colors.pb( Color(6, bottom[1][0], 6, lef[2][1], 6, 6));
+	Colors.pb( Color(6, bottom[1][1], 6, 6, 6, 6));
+	Colors.pb( Color(6, bottom[2][1], righ[2][1], 6, front[0][0], 6));
+	
+	Colors.pb( Color(top[2][0], 6, 6, lef[0][2], front[0][0], 6));
+	Colors.pb( Color(top[2][1], 6, 6, 6, front[0][1], 6));
+	Colors.pb( Color(top[2][2], 6, righ[0][2], 6, front[0][2], 6));
+	Colors.pb( Color(6, 6, 6, lef[1][2], front[1][0], 6));
+	Colors.pb( Color(6, 6, 6, 6, front[1][1], 6));
+	Colors.pb( Color(6, 6, righ[1][2], 6, front[1][2], 6));
+	Colors.pb( Color(6, bottom[2][0],6, lef[2][2], front[2][0], 6));
+	Colors.pb( Color(6, bottom[2][1], 6, 6, front[2][1], 6));
+	Colors.pb( Color(6, bottom[2][2], righ[2][2], 6, front[2][2], 6));
+}
+GLfloat color[][3] = { {1.0,1.0,1.0},  //white 
+					{1.0,0.5,0.0},  //orange 
+					{0.0,0.0,1.0},  //blue 
+					{0.0,1.0,0.0},  //green 
+					{1.0,1.0,0.0},  //yellow 
+					{1.0,0.0,0.0}, //red 
+					{0.4,0.4,0.4} };
+void drawCube()														  
+	{
+		
+	Point3D p;
+	p = Point3D(0, 0, 1);
 	threeD();
 	double x, y, z;
 	if (n & 1)
 		minValue = -((n - 1) / 2 * cube_size);
 	else
 		minValue = -(n / 2 * cube_size - cube_size / 2);
-	int count = 0;
+
 	
 	glPushMatrix();
-	//gluLookAt(0.5, 0.5, 0.5, 0, 0, 0, 0, 1, 0);
+	 
 	GLfloat rotation[16];
-	CVector camera = CVector(0, 0, 0);
-	//CQuaternion q = CreateQuaternionWithThetha(CVector(0, 1, 0), rotY);
-	//CVector v = QuaternionRotation(q, CVector(1, 0, 0));
-	//CQuaternion q1 =CQuaternion(0, v.x,v.y,v.z);
-	//QuaternionRotationMatrix(q1, rotation);
-	//glMultMatrixf(rotation);
-
+	GLfloat rotation1[16];
+	//glRotatef(rotY, 0, 1, 0);
+	//glRotatef(rotX, 1, 0, 0);
+	Point3D axis,axis1,p1;
+	//p = Point3D(0, 0, 1);
+	//Point3D p1;
 	
-	//CQuaternion q11 = CreateQuaternionWithThetha(CVector(1, 0, 0), rotX);
-	//CVector v1 = QuaternionRotation(q11, CVector(0, 1, 0));
-	//CQuaternion q10 = CQuaternion(0, v1.x, v1.y, v1.z);
-	//QuaternionRotationMatrix(q10, rotation);
-	//glMultMatrixf(rotation);
-	glRotatef(rotY, 0, 1, 0);
-	glRotatef(rotX, 1, 0, 0);
+		
+	
+		axis = Point3D(1, 0, 0);
+		axis1 = Point3D(0, 1, 0);
+	
 
+	Quaternion rp = RotateAboutAxis(p, toRad(rotX), axis);
+	rp.ExportToMatrix(rotation);
+	glMultMatrixf(rotation);	
+	Quaternion rp1 = RotateAboutAxis(p, toRad(rotY), axis1);
+	rp1.ExportToMatrix(rotation);
+	glMultMatrixf(rotation);
+	/*if (choice1) {
+		Quaternion rp2 = RotateAboutAxis(p, toRad(angle), axis);
+		//rp2.Inverse();
+		rp2.ExportToMatrix(rotation);
+		glMultMatrixf(rotation);
+	
+	}*/
+	int count = 0;
+	p1.x = p1.y = p1.z = 0;
+		FOR(k, minValue, -minValue, cube_size) {// step through x axis				
 
+		FORD(j, -minValue, minValue, cube_size) {// step through y axis
 
-	//GLfloat matrixf[16];
-   //Generic rubiks cube
-	FOR(i, minValue, -minValue, cube_size) {// step through x axis				
-
-		FOR(j, minValue, -minValue, cube_size) {// step through y axis
-
-			FOR(k, minValue, -minValue, cube_size)// step through z axis
+			FOR(i, minValue, -minValue, cube_size)// step through z axis
 			{
+
+
 				
-				coordinates c;
-				c.x = i;
-				c.y = j;
-				c.z = k;
-				Coordinates.push_back(c);
+				//coordinates c;
+				//c.x = i;
+				//c.y = j;
+				//c.z = k;
+				//Coordinates.push_back(c);
 				GLfloat rotation1[16];
-				/*glPushMatrix();
+				glPushMatrix();
+		
 				switch (selector)
 				{
-					
-				case 'i': if (i == selector_value) {
-					//QuaternionRotationMatrix(CQuaternion(0,1,0,0),rotation);
-					// glMultMatrixf(rotation);
-					glRotatef(angle,1, 0, 0);
-					
-					CQuaternion q111 = CreateQuaternionWithThetha(CVector(1, 0, 0), PI/2);
-					
-					QuaternionRotationMatrix(q111, rotation1);
-				
-					//glMultMatrixf(rotation1);
-
-					
-					
-				}break;
-				case 'j': if (j == selector_value) {
-					glMultMatrixf(rotation1);
-					glRotatef(angle, 0, 1, 0);
-				
-					
-				}break;
+				case 'i': if (i == selector_value) glRotatef(angle, 1, 0, 0); break;
+				case 'j': if (j == selector_value) glRotatef(angle, 0, 1, 0); break;
 				case 'k': if (k == selector_value) glRotatef(angle, 0, 0, 1); break;
-		
-					
-
-				}*/
-				//vector<cube_rotate> lrot = cube_rotations[i][j][k];
-
-				draw_cube(i, j, k);
+				}
+				Colors.clear();
+				bindColor();
+				draw_cube(i, j, k,count);
+				count++;
+				
+				glPopMatrix();
+				
+				
 								//if(!choice)
 					//render();
 				
@@ -540,6 +804,11 @@ void drawCube()
 			}
 		}
 	}
+
+	
+
+	
+
 	
 	glPopMatrix();
 	//gluLookAt(0, 0, 0, 0, 0, 0, 0, 1, 0);
@@ -565,16 +834,23 @@ void display() {
 	glutSwapBuffers();
 	glutPostRedisplay();
 }
-void draw_cube(float x, float y, float z)
+void print()
+{
+	bindColor();
+	REP(count,Colors.size())
+		cout<<Colors[count].Top<<" "<< Colors[count].Bottom<<" " << Colors[count].Right<<" "<< Colors[count].Left<<" "<< Colors[count].Front<<" "<<Colors[count].Back<<endl;
+	
+}
+void draw_cube(float x, float y, float z,int count)
 {
 
 	double gap = 0.04;
 	glPushMatrix();
 	 glTranslatef(x+x*gap,y+y*gap,z+z*gap);	
-	if (minValue == z)
-		glColor3f(1.0f, 0.5f, 0.0f);
-	else
-		glColor3f(0.4, 0.4, 0.4);
+	//if (minValue == z)
+		glColor3fv(color[Colors[count].Back]);
+	//else
+		//glColor3f(0.4, 0.4, 0.4);
 	glBegin(GL_QUADS);  // back
 	glNormal3f(0.0, 0.0, -1.0);  // face normal
 	glVertex3f(cube_size / 2, cube_size / 2, -cube_size / 2);
@@ -582,10 +858,10 @@ void draw_cube(float x, float y, float z)
 	glVertex3f(-cube_size / 2, -cube_size / 2, -cube_size / 2);
 	glVertex3f(-cube_size / 2, cube_size / 2, -cube_size / 2);
 	glEnd();
-	if(minValue == x)
-		glColor3f(0.0f, 0.0f, 1.0f);
-	else
-		glColor3f(0.4, 0.4, 0.4);
+	//if(minValue == x)
+		glColor3fv(color[Colors[count].Left]);
+	//else
+		//glColor3f(0.4, 0.4, 0.4);
 	glBegin(GL_QUADS);  // left
 	glNormal3f(-1.0, 0.0, 0.0);  // face normal 
 	glVertex3f(-cube_size / 2, cube_size / 2, cube_size / 2);
@@ -594,10 +870,10 @@ void draw_cube(float x, float y, float z)
 	glVertex3f(-cube_size / 2, -cube_size / 2, cube_size / 2);
 	glEnd();
 
-	if (minValue == y)
-		glColor3f(1.0f, 1.0f, 0.0f);
-	else
-		glColor3f(0.4, 0.4, 0.4);
+	//if (minValue == y)
+	glColor3fv(color[Colors[count].Bottom]);
+	//else
+		//glColor3f(0.4, 0.4, 0.4);
 	glBegin(GL_QUADS);  // bottom
 	glNormal3f(0.0, -1.0, 0.0);  // face normal
 	glVertex3f(-cube_size / 2, -cube_size / 2, -cube_size / 2);
@@ -606,10 +882,10 @@ void draw_cube(float x, float y, float z)
 	glVertex3f(-cube_size / 2, -cube_size / 2, cube_size / 2);
 	glEnd();
 
-	if(minValue == -x)
-		glColor3f(0.0f, 1.0f, 0.0f);
-	else
-		glColor3f(0.4, 0.4, 0.4);
+	//if(minValue == -x)
+		glColor3fv(color[Colors[count].Right]);
+	//else
+		//glColor3f(0.4, 0.4, 0.4);
 	glBegin(GL_QUADS);  // right
 	glNormal3f(1.0, 0.0, 0.0);  // face normal
 	glVertex3f(cube_size / 2, cube_size / 2, cube_size / 2);
@@ -618,10 +894,10 @@ void draw_cube(float x, float y, float z)
 	glVertex3f(cube_size / 2, cube_size / 2, -cube_size / 2);
 	glEnd();
 
-	if(minValue == -y)
-	glColor3f(1.0f, 1.0f, 1.0f);
-	else
-		glColor3f(0.4, 0.4, 0.4);
+	//if(minValue == -y)
+		glColor3fv(color[Colors[count].Top]);
+	//else
+		//glColor3f(0.4, 0.4, 0.4);
 	glBegin(GL_QUADS);  // top
 	glNormal3f(0.0, 1.0, 0.0);  // face normal
 	glVertex3f(-cube_size / 2, cube_size / 2, -cube_size / 2);
@@ -630,10 +906,10 @@ void draw_cube(float x, float y, float z)
 	glVertex3f(cube_size / 2, cube_size / 2, -cube_size / 2);
 	glEnd();
 
-	if (minValue == -z)
-		glColor3f(1.0f, 0.0f, 0.0f);
-	else
-		glColor3f(0.4, 0.4, 0.4);
+	//if (minValue == -z)
+		glColor3fv(color[Colors[count].Front]);
+	//else
+		//glColor3f(0.4, 0.4, 0.4);
 	glBegin(GL_QUADS);  // front
 	glNormal3f(0.0, 0.0, 1.0);  // face normal
 	glVertex3f(cube_size / 2, cube_size / 2, cube_size / 2);
@@ -737,39 +1013,53 @@ void keyboardFunc(unsigned char key, int x, int y)
 	case 'i'://side face antiClockwise
 		selector = 'i';
 		selector_value = minValue;
-		angle += 22;
+		x1 += 90;
+		angle = x1;
+		leftc();
+	
+		
 		break;
 	case 'I'://side face clockwise
 		selector = 'i';
 		selector_value = minValue;
-			angle+= 22;
+			x1-= 90;
+			angle = x1;
+			leftc(); leftc(); leftc();
 			break;
 	case 'j':
 		selector = 'i';
 		selector_value = minValue+cube_size;
-		angle -= 45;
+		x1 += 45;
+		angle = x1;
+		
+		
 		break;
 	case 'J':
 		selector = 'i';
 		selector_value = minValue+cube_size;
-		angle += 45;
+		x1 -= 90;
+		angle = x1;
 		break;
 
-	case 'k': // up
+	case 'k':
 		selector = 'i';
 		selector_value = minValue + 2*cube_size;
-		angle -= 45;
+		x2 += 90;
+		angle = x2;
+		//rightc();
 		break;
 
 	case 'K':
 		selector = 'i';
 		selector_value = minValue + 2*cube_size;
-		angley += 45;
+		x2 -= 90;
+		angle = x2;
+		//rightc(); rightc(); rightc();
 		break;
 	case 'q':
 		selector = 'j';
 		selector_value = minValue;
-		angley -= 45;
+		angle -= 45;
 		break;
 	case 'Q':
 		selector = 'j';
@@ -834,6 +1124,8 @@ void keyboardFunc(unsigned char key, int x, int y)
 		selector_value = minValue;
 		angle -= 45;
 		break;
+		case '1' :
+			print();
 	default:
 		break;
 
