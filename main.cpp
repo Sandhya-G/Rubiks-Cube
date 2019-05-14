@@ -1,4 +1,4 @@
-
+#include<stdlib.h>
 #include <GL/glut.h>  
 #include<iostream>
 #include<vector>
@@ -395,9 +395,6 @@ void drawBack()
 		window = 0;
 	glutPostRedisplay();
 }
-int choice1=0;
-
-
 
 
 
@@ -683,8 +680,40 @@ void bottomc()
 
 }
 
-void bindColor()
+void drawHelp()   //button
 {
+	twoD();
+	Button in = Button(-2.0,-3.5,1.5,0.75,0,"HELP");
+	in.ButtonPassive();
+	in.ButtonDraw();
+	if(in.OnButtonClicked())
+			window=2;
+	glutPostRedisplay();
+}
+	 
+
+
+void displayHelp()   //instructions
+{
+		glPushMatrix();
+	glTranslatef(0.5, 0, 0);
+	    
+		glColor3f(1.0, 1.0, 1.0);
+		drawText(GLUT_BITMAP_HELVETICA_18, "L/l-Rotate cube antoclockwise", -0.5, -1.0+0.5);
+		drawText(GLUT_BITMAP_HELVETICA_18, "R/r-Rotate cube clockwise", -0.5, -1.5+0.5);
+		drawText(GLUT_BITMAP_HELVETICA_18, "U/u-Rotate cube upwards", -0.5, -2.0+0.5);
+		drawText(GLUT_BITMAP_HELVETICA_18, "D/d-Rotate cube downwards",-0.5, -2.5+0.5);
+	    
+
+		glPopMatrix();
+		drawBack();
+		
+		
+
+	
+}
+void bindColor()
+{	
 	Colors.pb(Color(top[0][0], 6, 6, lef[0][0], 6, back[0][0]));
 	Colors.pb(Color(top[0][1], 6, 6,6 , 6, back[0][1]));
 	Colors.pb(Color(top[0][2], 6,righ[0][0] , 6, 6, back[0][2]));
@@ -723,10 +752,7 @@ GLfloat color[][3] = { {1.0,1.0,1.0},  //white
 					{1.0,0.0,0.0}, //red 
 					{0.4,0.4,0.4} };
 void drawCube()														  
-	{
-		
-	Point3D p;
-	p = Point3D(0, 0, 1);
+{		
 	threeD();
 	double x, y, z;
 	if (n & 1)
@@ -739,8 +765,8 @@ void drawCube()
 	 
 	GLfloat rotation[16];
 	GLfloat rotation1[16];
-	//glRotatef(rotY, 0, 1, 0);
-	//glRotatef(rotX, 1, 0, 0);
+	glRotatef(rotY, 0, 1, 0);
+	glRotatef(rotX, 1, 0, 0);
 	Point3D axis,axis1,p1;
 	//p = Point3D(0, 0, 1);
 	//Point3D p1;
@@ -751,12 +777,12 @@ void drawCube()
 		axis1 = Point3D(0, 1, 0);
 	
 
-	Quaternion rp = RotateAboutAxis(p, toRad(rotX), axis);
+	/*Quaternion rp = RotateAboutAxis(p, toRad(rotX), axis);
 	rp.ExportToMatrix(rotation);
 	glMultMatrixf(rotation);	
 	Quaternion rp1 = RotateAboutAxis(p, toRad(rotY), axis1);
 	rp1.ExportToMatrix(rotation);
-	glMultMatrixf(rotation);
+	glMultMatrixf(rotation);*/
 	/*if (choice1) {
 		Quaternion rp2 = RotateAboutAxis(p, toRad(angle), axis);
 		//rp2.Inverse();
@@ -768,7 +794,7 @@ void drawCube()
 	p1.x = p1.y = p1.z = 0;
 		FOR(k, minValue, -minValue, cube_size) {// step through x axis				
 
-		FORD(j, -minValue, minValue, cube_size) {// step through y axis
+		FORD(j, -minValue, minValue, cube_size) {// step down through y axis
 
 			FOR(i, minValue, -minValue, cube_size)// step through z axis
 			{
@@ -780,7 +806,7 @@ void drawCube()
 				//c.y = j;
 				//c.z = k;
 				//Coordinates.push_back(c);
-				GLfloat rotation1[16];
+				//GLfloat rotation1[16];
 				glPushMatrix();
 		
 				switch (selector)
@@ -811,9 +837,13 @@ void drawCube()
 
 	
 	glPopMatrix();
+
 	//gluLookAt(0, 0, 0, 0, 0, 0, 0, 1, 0);
 
 	drawBack();
+
+	drawHelp();
+
 
 }
 
@@ -824,15 +854,28 @@ void display() {
 	glMatrixMode(GL_MODELVIEW);     // To operate on model-view matrix
 	glLoadIdentity(); 
 	glTranslatef(0, 0, -10);
-	if (!window)
+	if (window == 0)
 	{
 		Buttons();
 		displayTitle();
 	}
-	else
+	else if(window == 1)
 		drawCube();
+
+	//Button bstart = Button(-1, -1, 2.5, 1.15, 0, 0, "START", TheButtonCallback);
+	
+	//bstart.ButtonDraw();
+	//Button bstart1 = Button(-3, -3, 2.5, 1.15, 0, 0, "START1", TheButtonCallback);
+	//bstart1.ButtonDraw();
+	//displayTitle();
+	//threeD();
+	//drawCube();
+	else 
+	   displayHelp();
+		
 	glutSwapBuffers();
 	glutPostRedisplay();
+	
 }
 void print()
 {
