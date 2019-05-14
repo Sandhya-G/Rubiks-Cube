@@ -21,6 +21,7 @@ using namespace std;
 void drawText(void *, const char*, float , float );
 void displayTitle();
 void draw_cube(float, float, float,int);
+void displayHelp();
 
 struct Mouse
 {
@@ -146,7 +147,7 @@ class Button {
 			glEnd();
 			glLineWidth(10);
 			glBegin(GL_LINE_STRIP);
-			glVertex2f(x + w, y + h+0.05 );
+			glVertex2f(x + w, y + h+0.05);
 			glVertex2f(x + w, y);
 			glEnd();
 		}
@@ -160,6 +161,8 @@ class Button {
 		glutPostRedisplay();
 		
 	}
+
+	
 	int ButtonArea()
 	{
 		double WminX, WminY, WmaxX, WmaxY;
@@ -205,7 +208,36 @@ class Button {
 	}
 };
 
+void drawGrid()
+{
+	int i;
+	
+	threeD();
+	for(i=0;i<200;i+=2)
+	{
+		glPushMatrix();
+		glLoadIdentity();
+		glTranslatef(-50, -10, -65);
 
+		//glRotatef(40, 1, 1, 0);
+		if (i < 100)
+			glTranslatef(0, 0, i);
+		else
+		{
+			glTranslatef(i-100, 0, 0);
+			glRotatef(-90, 0, 1, 0);
+		}
+		glLineWidth(1);
+		glBegin(GL_LINES);
+		
+		glColor3f(0.8, 0.8, 0.8);
+		glVertex3f(0,-3.0 , 0);
+		glVertex3f(99, -3.0, 0);
+		glEnd();
+		glPopMatrix();
+	}
+
+}
 const double cube_size = 1;
 int n = 0;
 double minValue;
@@ -239,13 +271,25 @@ void Buttons()
 void drawBack()
 {
 	twoD();
-	Button back = Button(-4.5, -3.5, 1.5, 0.75, 0, "BACK");
+	Button back = Button(-4.5, 2.5, 1.5, 0.75, 0, "BACK");
 	back.ButtonPassive();
 	back.ButtonDraw();
 	if (back.OnButtonClicked())
 		window = 0;
 	glutPostRedisplay();
 }
+void drawHelp()   //button
+{
+	twoD();
+	Button in = Button(3.0, 2.5, 1.5, 0.75, 0, "HELP");
+	in.ButtonPassive();
+	in.ButtonDraw();
+	if (in.OnButtonClicked())
+		window = 2;
+	glutPostRedisplay();
+}
+
+
 
 
 
@@ -531,38 +575,11 @@ void bottomc()
 
 }
 
-void drawHelp()   //button
-{
-	twoD();
-	Button in = Button(3.5,-3.5,1.5,0.75,0,"HELP");
-	in.ButtonPassive();
-	in.ButtonDraw();
-	if(in.OnButtonClicked())
-			window=2;
-	glutPostRedisplay();
-}
+
 	 
 
 
-void displayHelp()   //instructions
-{
-		glPushMatrix();
-	glTranslatef(0.5, 0, 0);
-	    
-		glColor3f(1.0, 1.0, 1.0);
-		drawText(GLUT_BITMAP_HELVETICA_18, "L/l-Rotate cube anticlockwise", -0.5, -1.0+0.5);
-		drawText(GLUT_BITMAP_HELVETICA_18, "R/r-Rotate cube clockwise", -0.5, -1.5+0.5);
-		drawText(GLUT_BITMAP_HELVETICA_18, "U/u-Rotate cube upwards", -0.5, -2.0+0.5);
-		drawText(GLUT_BITMAP_HELVETICA_18, "D/d-Rotate cube downwards",-0.5, -2.5+0.5);
-	    
 
-		glPopMatrix();
-		drawBack();
-		
-		
-
-	
-}
 void bindColor()
 {	
 	Colors.pb(Color(top[0][0], 6, 6, lef[0][0], 6, back[0][0]));
@@ -665,16 +682,23 @@ void display() {
 	glMatrixMode(GL_MODELVIEW);     // To operate on model-view matrix
 	glLoadIdentity(); 
 	glTranslatef(0, 0, -10);
+	glClearColor(0.4, 0.4, 0.4, 1.0);
 	if (window == 0)
 	{
 		Buttons();
 		displayTitle();
 	}
-	else if(window == 1)
+	else if (window == 1) 
+	{
+		glClearColor(0.4, 0.4, 0.4, 1.0);		
 		drawCube();
+		drawGrid();
+		glutPostRedisplay();
+	}
 	else 
 	   displayHelp();
-		
+	
+	
 	glutSwapBuffers();
 	glutPostRedisplay();
 	
@@ -692,10 +716,8 @@ void draw_cube(float x, float y, float z,int count)
 	double gap = 0.04;
 	glPushMatrix();
 	 glTranslatef(x+x*gap,y+y*gap,z+z*gap);	
-	//if (minValue == z)
+	
 	n==3 ? glColor3fv(color[Colors[count].Back]) : minValue==z? glColor3fv(color[3]) : glColor3f(0.4, 0.4, 0.4);
-	//else
-		//glColor3f(0.4, 0.4, 0.4);
 	glBegin(GL_QUADS);  // back
 	glNormal3f(0.0, 0.0, -1.0);  // face normal
 	glVertex3f(cube_size / 2, cube_size / 2, -cube_size / 2);
@@ -703,10 +725,8 @@ void draw_cube(float x, float y, float z,int count)
 	glVertex3f(-cube_size / 2, -cube_size / 2, -cube_size / 2);
 	glVertex3f(-cube_size / 2, cube_size / 2, -cube_size / 2);
 	glEnd();
-	//if(minValue == x)
-	 n == 3 ? glColor3fv(color[Colors[count].Left]) : minValue == x ? glColor3fv(color[5]) : glColor3f(0.4, 0.4, 0.4);
-	//else
-		//glColor3f(0.4, 0.4, 0.4);
+	
+	n == 3 ? glColor3fv(color[Colors[count].Left]) : minValue == x ? glColor3fv(color[5]) : glColor3f(0.4, 0.4, 0.4);
 	glBegin(GL_QUADS);  // left
 	glNormal3f(-1.0, 0.0, 0.0);  // face normal 
 	glVertex3f(-cube_size / 2, cube_size / 2, cube_size / 2);
@@ -715,11 +735,8 @@ void draw_cube(float x, float y, float z,int count)
 	glVertex3f(-cube_size / 2, -cube_size / 2, cube_size / 2);
 	glEnd();
 
-	//if (minValue == y)
+	
 	n == 3 ? glColor3fv(color[Colors[count].Bottom]):minValue==y? glColor3fv(color[4]) : glColor3f(0.4, 0.4, 0.4);
-
-	//else
-		//glColor3f(0.4, 0.4, 0.4);
 	glBegin(GL_QUADS);  // bottom
 	glNormal3f(0.0, -1.0, 0.0);  // face normal
 	glVertex3f(-cube_size / 2, -cube_size / 2, -cube_size / 2);
@@ -728,11 +745,7 @@ void draw_cube(float x, float y, float z,int count)
 	glVertex3f(-cube_size / 2, -cube_size / 2, cube_size / 2);
 	glEnd();
 
-	//if(minValue == -x)
 	n == 3 ? glColor3fv(color[Colors[count].Right]) : minValue == -x ? glColor3fv(color[1]) : glColor3f(0.4, 0.4, 0.4);
-
-	//else
-		//glColor3f(0.4, 0.4, 0.4);
 	glBegin(GL_QUADS);  // right
 	glNormal3f(1.0, 0.0, 0.0);  // face normal
 	glVertex3f(cube_size / 2, cube_size / 2, cube_size / 2);
@@ -741,11 +754,8 @@ void draw_cube(float x, float y, float z,int count)
 	glVertex3f(cube_size / 2, cube_size / 2, -cube_size / 2);
 	glEnd();
 
-	//if(minValue == -y)
-	 n == 3 ? glColor3fv(color[Colors[count].Top]) : minValue == -y ? glColor3fv(color[0]) : glColor3f(0.4, 0.4, 0.4);
-
-	//else
-		//glColor3f(0.4, 0.4, 0.4);
+	
+	n == 3 ? glColor3fv(color[Colors[count].Top]) : minValue == -y ? glColor3fv(color[0]) : glColor3f(0.4, 0.4, 0.4);
 	glBegin(GL_QUADS);  // top
 	glNormal3f(0.0, 1.0, 0.0);  // face normal
 	glVertex3f(-cube_size / 2, cube_size / 2, -cube_size / 2);
@@ -754,11 +764,7 @@ void draw_cube(float x, float y, float z,int count)
 	glVertex3f(cube_size / 2, cube_size / 2, -cube_size / 2);
 	glEnd();
 
-	//if (minValue == -z)
     n == 3 ? glColor3fv(color[Colors[count].Front]) : minValue == -z ? glColor3fv(color[2]) : glColor3f(0.4, 0.4, 0.4);
-
-	//else
-		//glColor3f(0.4, 0.4, 0.4);
 	glBegin(GL_QUADS);  // front
 	glNormal3f(0.0, 0.0, 1.0);  // face normal
 	glVertex3f(cube_size / 2, cube_size / 2, cube_size / 2);
@@ -784,6 +790,25 @@ void drawText(void *font, const char *text, float x, float y)
 		++text;
 	}
 	//glPopMatrix();
+}
+void displayHelp()   //instructions
+{
+	glPushMatrix();
+	glTranslatef(0.5, 0, 0);
+
+	glColor3f(1.0, 1.0, 1.0);
+	drawText(GLUT_BITMAP_HELVETICA_18, "L/l-Rotate cube anticlockwise", -0.5, -1.0 + 0.5);
+	drawText(GLUT_BITMAP_HELVETICA_18, "R/r-Rotate cube clockwise", -0.5, -1.5 + 0.5);
+	drawText(GLUT_BITMAP_HELVETICA_18, "U/u-Rotate cube upwards", -0.5, -2.0 + 0.5);
+	drawText(GLUT_BITMAP_HELVETICA_18, "D/d-Rotate cube downwards", -0.5, -2.5 + 0.5);
+
+
+	glPopMatrix();
+	drawBack();
+
+
+
+
 }
 //mouse functions
 void MouseButton(int button, int state, int x, int y)
@@ -988,17 +1013,17 @@ void keyboardFunc(unsigned char key, int x, int y)
 void reshape(GLsizei width, GLsizei height) {  // GLsizei for non-negative integer
    // Compute aspect ratio of the new window
 	if (height == 0) height = 1;                // To prevent divide by 0
-	GLfloat aspect = (GLfloat)width / (GLfloat)height;
 	winw = width;
 	winh = height;
+	GLfloat aspect = (GLfloat)width / (GLfloat)height;
 	// Set the viewport to cover the new window
 	glViewport(0, 0, winw, winh);
-
 	// Set the aspect ratio of the clipping volume to match the viewport
 	glMatrixMode(GL_PROJECTION);  // To operate on the Projection matrix
-	glLoadIdentity();             // Reset
+	glLoadIdentity(); // Reset
 	// Enable perspective projection with fovy, aspect, zNear and zFar
 	gluPerspective(45.0f, aspect, 0.1f, 100.0f);
+	
 }
 
 
