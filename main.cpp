@@ -18,133 +18,6 @@
 using namespace std;
 
 
-
-
-class Point3D
-{
-public:
-	double x, y, z;
-	Point3D()
-	{
-		x = 0;
-		y = 0;
-		z = 0;
-	}
-	Point3D(double px,double py, double pz)
-	{
-		x = px;
-		y = py;
-		z = pz;
-
-	}
-	
-};
-
-// --------------------------------------------------------------------
-//		Quatenions
-//---------------------------------------------------------------------
-class Quaternion {
-public:
-	double w;
-	Point3D u;
-
-	inline void Multiply(const Quaternion q)
-	{
-		
-		Quaternion tmp;
-		tmp.u.x = ((w * q.u.x) + (u.x * q.w) + (u.y * q.u.z) - (u.z * q.u.y));
-		tmp.u.y = ((w * q.u.y) - (u.x * q.u.z) + (u.y * q.w) + (u.z * q.u.x));
-		tmp.u.z = ((w * q.u.z) + (u.x * q.u.y) - (u.y * q.u.x) + (u.z * q.w));
-		tmp.w = ((w * q.w) - (u.x * q.u.x) - (u.y * q.u.y) - (u.z * q.u.z));
-		*this = tmp;
-	}
-
-	inline double Norm()
-	{
-		return sqrt(u.x * u.x + u.y * u.y + u.z * u.z + w * w);
-	}
-
-	inline void Conjugate()
-	{
-		u.x = -u.x;
-		u.y = -u.y;
-		u.z = -u.z;
-	}
-
-	inline void Inverse()
-	{
-		double norm = Norm();
-		Conjugate();
-		u.x /= norm;
-		u.y /= norm;
-		u.z /= norm;
-		w /= norm;
-	}
-
-
-	void ExportToMatrix(float matrix[16])
-	{
-		float wx, wy, wz, xx, yy, yz, xy, xz, zz;
-
-		// adapted from Shoemake
-		xx = u.x * u.x;
-		xy = u.x * u.y;
-		xz = u.x * u.z;
-		yy = u.y * u.y;
-		zz = u.z * u.z;
-		yz = u.y * u.z;
-
-		wx = w * u.x;
-		wy = w * u.y;
-		wz = w * u.z;
-
-		matrix[0] = 1.0f - 2.0f * (yy + zz);
-		matrix[4] = 2.0f * (xy - wz);
-		matrix[8] = 2.0f * (xz + wy);
-		matrix[12] = 0.0;
-
-		matrix[1] = 2.0f * (xy + wz);
-		matrix[5] = 1.0f - 2.0f * (xx + zz);
-		matrix[9] = 2.0f * (yz - wx);
-		matrix[13] = 0.0;
-
-		matrix[2] = 2.0f * (xz - wy);
-		matrix[6] = 2.0f * (yz + wx);
-		matrix[10] = 1.0f - 2.0f * (xx + yy);
-		matrix[14] = 0.0;
-
-		matrix[3] = 0;
-		matrix[7] = 0;
-		matrix[11] = 0;
-		matrix[15] = 1;
-	}
-
-};
-
-Quaternion RotateAboutAxis(Point3D pt, double angle, Point3D axis)
-{
-	Quaternion q, p, qinv;
-
-	q.w = cos(0.5 * angle);
-	q.u.x = sin(0.5 * angle) * axis.x;
-	q.u.y = sin(0.5 * angle) * axis.y;
-	q.u.z = sin(0.5 * angle) * axis.z;
-
-	p.w = 0;
-	p.u = pt;
-
-	qinv = q;
-	qinv.Inverse();
-
-	q.Multiply(p);
-	q.Multiply(qinv);
-
-	return q;
-}
-//----------------------------------------------------------------------
-//	Quaternions ending
-//----------------------------------------------------------------------
-
 void drawText(void *, const char*, float , float );
 void displayTitle();
 void draw_cube(float, float, float,int);
@@ -194,29 +67,12 @@ class Color {
 			
 		}
 };
-struct coordinates {
-	public:	
-		double x;
-		double y;
-		double z;
-		coordinates(double px, double py, double pz)
-		{
-			x = px;
-			y = py;
-			z = pz;
-		}
-	
-		bool operator==(const coordinates & c) const
-		{
-			return (c.x == x && c.y == y && c.z == z);
-		}
-};
 
 
 Mouse mouse = {0,0,0};
 GLdouble winX,winY,winZ;
-int winw = 640, winh = 480;
-int window = 0;
+static int winw = 640, winh = 480;
+static int window = 0;
 void twoD()
 {
 	glDisable(GL_DEPTH_TEST);
@@ -243,7 +99,6 @@ void WindowCoordinates(GLdouble x, GLdouble y)
 	gluProject(x,y,0.0,modelview,projection,viewport,&winX,&winY,&winZ);
 }
 
-//-----------------------------------------------------------------------
 class Button {
 	public:
 	    float x;				
@@ -271,7 +126,7 @@ class Button {
 	{
 		float fontx=0;
 		float fonty=0;
-		glColor3f(0, 0.8, 0);
+		glColor3f(0.0, 0.8, 0.0);
 		//draw background for the button.
 		glBegin(GL_QUADS);
 		glVertex2f(x, y);
@@ -283,15 +138,15 @@ class Button {
 		//Draw an outline around the button
 		if (!highlighted)
 		{
-			glColor3f(0.0f, 0.3f, 0.0f);
+			glColor3f(0.0f, 0.3f, 0.f);
 			glLineWidth(6);
 			glBegin(GL_LINE_STRIP);
-			glVertex2f(x + 0.006, y + h);
-			glVertex2f(x + w+0.006, y + h);
+			glVertex2f(x+0.006 , y + h);
+			glVertex2f(x + w, y + h);
 			glEnd();
 			glLineWidth(10);
 			glBegin(GL_LINE_STRIP);
-			glVertex2f(x + w, y + h + 0.05);
+			glVertex2f(x + w, y + h+0.05 );
 			glVertex2f(x + w, y);
 			glEnd();
 		}
@@ -350,11 +205,7 @@ class Button {
 	}
 };
 
-void TheButtonCallback()
-{
-	printf("I have been called\n");
-}
-//-----------------------------------------------------------------------
+
 const double cube_size = 1;
 int n = 0;
 double minValue;
@@ -683,7 +534,7 @@ void bottomc()
 void drawHelp()   //button
 {
 	twoD();
-	Button in = Button(-2.0,-3.5,1.5,0.75,0,"HELP");
+	Button in = Button(3.5,-3.5,1.5,0.75,0,"HELP");
 	in.ButtonPassive();
 	in.ButtonDraw();
 	if(in.OnButtonClicked())
@@ -699,7 +550,7 @@ void displayHelp()   //instructions
 	glTranslatef(0.5, 0, 0);
 	    
 		glColor3f(1.0, 1.0, 1.0);
-		drawText(GLUT_BITMAP_HELVETICA_18, "L/l-Rotate cube antoclockwise", -0.5, -1.0+0.5);
+		drawText(GLUT_BITMAP_HELVETICA_18, "L/l-Rotate cube anticlockwise", -0.5, -1.0+0.5);
 		drawText(GLUT_BITMAP_HELVETICA_18, "R/r-Rotate cube clockwise", -0.5, -1.5+0.5);
 		drawText(GLUT_BITMAP_HELVETICA_18, "U/u-Rotate cube upwards", -0.5, -2.0+0.5);
 		drawText(GLUT_BITMAP_HELVETICA_18, "D/d-Rotate cube downwards",-0.5, -2.5+0.5);
@@ -717,29 +568,29 @@ void bindColor()
 	Colors.pb(Color(top[0][0], 6, 6, lef[0][0], 6, back[0][0]));
 	Colors.pb(Color(top[0][1], 6, 6,6 , 6, back[0][1]));
 	Colors.pb(Color(top[0][2], 6,righ[0][0] , 6, 6, back[0][2]));
-	Colors.pb(Color(6, 6, 6, lef[1][0], 6, back[1][0]));
+	Colors.pb(Color(6, 6, 6, lef[0][1], 6, back[1][0]));
 	Colors.pb(Color(6, 6, 6, 6, 6, back[1][1]));
-	Colors.pb(Color(6, 6, righ[1][0], 6, 6, back[1][2]));
-	Colors.pb(Color(6, bottom[0][0], 6, lef[2][0], 6, back[2][0]));
+	Colors.pb(Color(6, 6, righ[0][1], 6, 6, back[1][2]));
+	Colors.pb(Color(6, bottom[0][0], 6, lef[0][2], 6, back[2][0]));
 	Colors.pb(Color(6, bottom[0][1], 6, 6, 6, back[2][1]));
-	Colors.pb(Color(6, bottom[0][2], righ[2][0], 6, 6, back[2][2]));
+	Colors.pb(Color(6, bottom[0][2], righ[0][2], 6, 6, back[2][2]));
 	
-	Colors.pb(Color(top[1][0], 6, 6, lef[0][1], 6, 6));
+	Colors.pb(Color(top[1][0], 6, 6, lef[1][0], 6, 6));
 	Colors.pb( Color(top[1][1], 6, 6, 6, 6, 6));
-	Colors.pb( Color(top[1][2], 6, righ[0][1], 6, 6, 6));
+	Colors.pb( Color(top[1][2], 6, righ[1][0], 6, 6, 6));
 	Colors.pb( Color(6, 6, 6, lef[1][1], 6, 6));
 	Colors.pb( Color(6, 6, 6, 6, 6, 6));
 	Colors.pb( Color(6, 6, righ[1][1], 6, 6, 6));
-	Colors.pb( Color(6, bottom[1][0], 6, lef[2][1], 6, 6));
+	Colors.pb( Color(6, bottom[1][0], 6, lef[1][2], 6, 6));
 	Colors.pb( Color(6, bottom[1][1], 6, 6, 6, 6));
-	Colors.pb( Color(6, bottom[2][1], righ[2][1], 6, front[0][0], 6));
+	Colors.pb( Color(6, bottom[1][2], righ[1][2], 6, 6, 6));
 	
-	Colors.pb( Color(top[2][0], 6, 6, lef[0][2], front[0][0], 6));
+	Colors.pb( Color(top[2][0], 6, 6, lef[2][0], front[0][0], 6));
 	Colors.pb( Color(top[2][1], 6, 6, 6, front[0][1], 6));
-	Colors.pb( Color(top[2][2], 6, righ[0][2], 6, front[0][2], 6));
-	Colors.pb( Color(6, 6, 6, lef[1][2], front[1][0], 6));
+	Colors.pb( Color(top[2][2], 6, righ[2][0], 6, front[0][2], 6));
+	Colors.pb( Color(6, 6, 6, lef[2][1], front[1][0], 6));
 	Colors.pb( Color(6, 6, 6, 6, front[1][1], 6));
-	Colors.pb( Color(6, 6, righ[1][2], 6, front[1][2], 6));
+	Colors.pb( Color(6, 6, righ[2][1], 6, front[1][2], 6));
 	Colors.pb( Color(6, bottom[2][0],6, lef[2][2], front[2][0], 6));
 	Colors.pb( Color(6, bottom[2][1], 6, 6, front[2][1], 6));
 	Colors.pb( Color(6, bottom[2][2], righ[2][2], 6, front[2][2], 6));
@@ -748,8 +599,8 @@ GLfloat color[][3] = { {1.0,1.0,1.0},  //white
 					{1.0,0.5,0.0},  //orange 
 					{0.0,0.0,1.0},  //blue 
 					{0.0,1.0,0.0},  //green 
-					{1.0,1.0,0.0},  //yellow 
-					{1.0,0.0,0.0}, //red 
+ 					{1.0,0.0,0.0}, //red 
+					{1.0,1.0,0.0},//yellow
 					{0.4,0.4,0.4} };
 void drawCube()														  
 {		
@@ -762,51 +613,15 @@ void drawCube()
 
 	
 	glPushMatrix();
-	 
-	GLfloat rotation[16];
-	GLfloat rotation1[16];
 	glRotatef(rotY, 0, 1, 0);
 	glRotatef(rotX, 1, 0, 0);
-	Point3D axis,axis1,p1;
-	//p = Point3D(0, 0, 1);
-	//Point3D p1;
-	
-		
-	
-		axis = Point3D(1, 0, 0);
-		axis1 = Point3D(0, 1, 0);
-	
-
-	/*Quaternion rp = RotateAboutAxis(p, toRad(rotX), axis);
-	rp.ExportToMatrix(rotation);
-	glMultMatrixf(rotation);	
-	Quaternion rp1 = RotateAboutAxis(p, toRad(rotY), axis1);
-	rp1.ExportToMatrix(rotation);
-	glMultMatrixf(rotation);*/
-	/*if (choice1) {
-		Quaternion rp2 = RotateAboutAxis(p, toRad(angle), axis);
-		//rp2.Inverse();
-		rp2.ExportToMatrix(rotation);
-		glMultMatrixf(rotation);
-	
-	}*/
 	int count = 0;
-	p1.x = p1.y = p1.z = 0;
 		FOR(k, minValue, -minValue, cube_size) {// step through x axis				
 
 		FORD(j, -minValue, minValue, cube_size) {// step down through y axis
 
 			FOR(i, minValue, -minValue, cube_size)// step through z axis
 			{
-
-
-				
-				//coordinates c;
-				//c.x = i;
-				//c.y = j;
-				//c.z = k;
-				//Coordinates.push_back(c);
-				//GLfloat rotation1[16];
 				glPushMatrix();
 		
 				switch (selector)
@@ -821,10 +636,6 @@ void drawCube()
 				count++;
 				
 				glPopMatrix();
-				
-				
-								//if(!choice)
-					//render();
 				
 
 			}
@@ -861,15 +672,6 @@ void display() {
 	}
 	else if(window == 1)
 		drawCube();
-
-	//Button bstart = Button(-1, -1, 2.5, 1.15, 0, 0, "START", TheButtonCallback);
-	
-	//bstart.ButtonDraw();
-	//Button bstart1 = Button(-3, -3, 2.5, 1.15, 0, 0, "START1", TheButtonCallback);
-	//bstart1.ButtonDraw();
-	//displayTitle();
-	//threeD();
-	//drawCube();
 	else 
 	   displayHelp();
 		
@@ -891,7 +693,7 @@ void draw_cube(float x, float y, float z,int count)
 	glPushMatrix();
 	 glTranslatef(x+x*gap,y+y*gap,z+z*gap);	
 	//if (minValue == z)
-		glColor3fv(color[Colors[count].Back]);
+	n==3 ? glColor3fv(color[Colors[count].Back]) : minValue==z? glColor3fv(color[3]) : glColor3f(0.4, 0.4, 0.4);
 	//else
 		//glColor3f(0.4, 0.4, 0.4);
 	glBegin(GL_QUADS);  // back
@@ -902,7 +704,7 @@ void draw_cube(float x, float y, float z,int count)
 	glVertex3f(-cube_size / 2, cube_size / 2, -cube_size / 2);
 	glEnd();
 	//if(minValue == x)
-		glColor3fv(color[Colors[count].Left]);
+	 n == 3 ? glColor3fv(color[Colors[count].Left]) : minValue == x ? glColor3fv(color[5]) : glColor3f(0.4, 0.4, 0.4);
 	//else
 		//glColor3f(0.4, 0.4, 0.4);
 	glBegin(GL_QUADS);  // left
@@ -914,7 +716,8 @@ void draw_cube(float x, float y, float z,int count)
 	glEnd();
 
 	//if (minValue == y)
-	glColor3fv(color[Colors[count].Bottom]);
+	n == 3 ? glColor3fv(color[Colors[count].Bottom]):minValue==y? glColor3fv(color[4]) : glColor3f(0.4, 0.4, 0.4);
+
 	//else
 		//glColor3f(0.4, 0.4, 0.4);
 	glBegin(GL_QUADS);  // bottom
@@ -926,7 +729,8 @@ void draw_cube(float x, float y, float z,int count)
 	glEnd();
 
 	//if(minValue == -x)
-		glColor3fv(color[Colors[count].Right]);
+	n == 3 ? glColor3fv(color[Colors[count].Right]) : minValue == -x ? glColor3fv(color[1]) : glColor3f(0.4, 0.4, 0.4);
+
 	//else
 		//glColor3f(0.4, 0.4, 0.4);
 	glBegin(GL_QUADS);  // right
@@ -938,7 +742,8 @@ void draw_cube(float x, float y, float z,int count)
 	glEnd();
 
 	//if(minValue == -y)
-		glColor3fv(color[Colors[count].Top]);
+	 n == 3 ? glColor3fv(color[Colors[count].Top]) : minValue == -y ? glColor3fv(color[0]) : glColor3f(0.4, 0.4, 0.4);
+
 	//else
 		//glColor3f(0.4, 0.4, 0.4);
 	glBegin(GL_QUADS);  // top
@@ -950,7 +755,8 @@ void draw_cube(float x, float y, float z,int count)
 	glEnd();
 
 	//if (minValue == -z)
-		glColor3fv(color[Colors[count].Front]);
+    n == 3 ? glColor3fv(color[Colors[count].Front]) : minValue == -z ? glColor3fv(color[2]) : glColor3f(0.4, 0.4, 0.4);
+
 	//else
 		//glColor3f(0.4, 0.4, 0.4);
 	glBegin(GL_QUADS);  // front
