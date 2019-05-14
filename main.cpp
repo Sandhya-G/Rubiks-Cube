@@ -1,3 +1,5 @@
+#include<Windows.h>
+#include<mmsystem.h>
 #include<stdlib.h>
 #include <GL/glut.h>  
 #include<iostream>
@@ -682,7 +684,7 @@ void display() {
 	glMatrixMode(GL_MODELVIEW);     // To operate on model-view matrix
 	glLoadIdentity(); 
 	glTranslatef(0, 0, -10);
-	glClearColor(0.4, 0.4, 0.4, 1.0);
+	
 	if (window == 0)
 	{
 		Buttons();
@@ -690,10 +692,10 @@ void display() {
 	}
 	else if (window == 1) 
 	{
-		glClearColor(0.4, 0.4, 0.4, 1.0);		
+		
 		drawCube();
 		drawGrid();
-		glutPostRedisplay();
+		
 	}
 	else 
 	   displayHelp();
@@ -1029,6 +1031,7 @@ void reshape(GLsizei width, GLsizei height) {  // GLsizei for non-negative integ
 
 /* Main function: GLUT runs as a console application starting at main() */
 int main(int argc, char** argv) {
+	PlaySound("Monkeys Spinning Monkeys.wav", NULL, SND_ASYNC);
 	glutInit(&argc, argv);// Initialize GLUT
 	glutInitDisplayMode(GLUT_DOUBLE|GLUT_DEPTH); // Enable double buffered mode
 	glutInitWindowSize(winw, winh);// Set the window's initial width & height
