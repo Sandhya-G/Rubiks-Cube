@@ -74,7 +74,7 @@ class Color {
 
 Mouse mouse = {0,0,0};
 GLdouble winX,winY,winZ;
-static int winw = 640, winh = 480;
+static int winw = 540, winh = 480;
 static int window = 0;
 void twoD()
 {
@@ -215,18 +215,19 @@ void drawGrid()
 	int i;
 	
 	threeD();
-	for(i=0;i<200;i+=2)
+	gluLookAt(0.5, 0.5, 0.5, 0, 0, 0, 0, 1, 0);
+	for(i=0;i<100;i+=2)
 	{
 		glPushMatrix();
 		glLoadIdentity();
-		glTranslatef(-50, -10, -65);
+		glTranslatef(-25, -10, -45);
 
 		//glRotatef(40, 1, 1, 0);
-		if (i < 100)
+		if (i < 50)
 			glTranslatef(0, 0, i);
 		else
 		{
-			glTranslatef(i-100, 0, 0);
+			glTranslatef(i-50, 0, 0);
 			glRotatef(-90, 0, 1, 0);
 		}
 		glLineWidth(1);
@@ -234,25 +235,23 @@ void drawGrid()
 		
 		glColor3f(0.8, 0.8, 0.8);
 		glVertex3f(0,-3.0 , 0);
-		glVertex3f(99, -3.0, 0);
+		glVertex3f(49, -3.0, 0);
 		glEnd();
 		glPopMatrix();
 	}
 
 }
-const double cube_size = 1;
+ double cube_size = 1;
 int n = 0;
 double minValue;
 char title[] = "Rubik's Cube";
-char selector = ' ';
-float selector_value ;
-int rotX = 0, rotY = 0, angle = 0, x1 = 0, z1 =0, x2 = 0,y2 =0, z2 =0, x3 = 0, y3 =0, z3 = 0;
+int rotX = 0, rotY = 0;
 void Buttons()
 {
 	twoD();
 	glColor3f(0, 0, 0);
-	Button b2c = Button(-1.2, 1.2, 1.5, 0.75, 0, "2*2*2");
-	Button b3c = Button(-1.2,0.15, 1.5, 0.75, 0,"3*3*3");	
+	Button b2c = Button(-1.2, 0.9, 1.5, 0.75, 0, "3*3*3");
+	Button b3c = Button(-1.2,-0.20, 1.5, 0.75, 0,"4*4*4");	
 	b3c.ButtonPassive();
 	b2c.ButtonPassive();
 	b2c.ButtonDraw();
@@ -260,12 +259,14 @@ void Buttons()
 	
 	if (b2c.OnButtonClicked())
 	{
-		n = 2;
+		n = 3;
 		window = 1;
+		cube_size = 1.0;
 	}
 	if (b3c.OnButtonClicked())
 	{
-		n = 3;
+		n = 5;
+		cube_size = 0.75;
 		window = 1;
 	}
 	glutPostRedisplay();
@@ -273,7 +274,7 @@ void Buttons()
 void drawBack()
 {
 	twoD();
-	Button back = Button(-4.5, 2.5, 1.5, 0.75, 0, "BACK");
+	Button back = Button(-4.2, 2.5, 1.5, 0.75, 0, "BACK");
 	back.ButtonPassive();
 	back.ButtonDraw();
 	if (back.OnButtonClicked())
@@ -283,7 +284,7 @@ void drawBack()
 void drawHelp()   //button
 {
 	twoD();
-	Button in = Button(3.0, 2.5, 1.5, 0.75, 0, "HELP");
+	Button in = Button(2.7, 2.5, 1.5, 0.75, 0, "HELP");
 	in.ButtonPassive();
 	in.ButtonDraw();
 	if (in.OnButtonClicked())
@@ -297,36 +298,25 @@ void drawHelp()   //button
 
 vector<Color> Colors;
 
-/*
-	on face rotations
-	0 1 2		6 3	0		
-	3 4 5		7 4	1
-	6 7 8		8 5	2
-*/
-
 void updateColors(char a)
 {
-
+	int temp;
 	if (a == 'r')
 	{
-		int temp;
 		temp = righ[0][0];
-		righ[0][0] = righ[2][0];
-		righ[2][0] = righ[2][2];
-		righ[2][2] = righ[0][2];
-		righ[0][2] = temp;
+		righ[0][0] = righ[0][2];
+		righ[0][2] = righ[2][2];
+		righ[2][2] = righ[2][0];
+		righ[2][0] = temp;
 		temp = righ[1][0];
-		righ[1][0] = righ[2][1];
-		righ[2][1] = righ[1][2];
-		righ[1][2] = righ[0][1];
-		righ[0][1] = temp;
+		righ[1][0] = righ[0][1];
+		righ[0][1] = righ[1][2];
+		righ[1][2] = righ[2][1];
+		righ[2][1] = temp;
 	}
 	if (a == 't')
-
-
-
 	{
-		int temp;
+		
 		temp = top[0][0];
 		top[0][0] = top[2][0];
 		top[2][0] = top[2][2];
@@ -340,7 +330,7 @@ void updateColors(char a)
 	}
 	if (a == 'f')
 	{
-		int temp;
+		
 		temp = front[0][0];
 		front[0][0] = front[2][0];
 		front[2][0] = front[2][2];
@@ -350,19 +340,13 @@ void updateColors(char a)
 		front[1][0] = front[2][1];
 		front[2][1] = front[1][2];
 		front[1][2] = front[0][1];
-
-
-
 		front[0][1] = temp;
 	}
 
 
-	/* 0 1 2	2 5 8
-	   3 4 5	1 4 7
-	   6 7 8	0 3 6	               */
+	
 	if (a == 'l')
 	{
-		int temp;
 		temp = lef[0][0];
 		lef[0][0] = lef[0][2];
 		lef[0][2] = lef[2][2];
@@ -383,9 +367,6 @@ void updateColors(char a)
 		back[2][2] = back[0][2];
 		back[0][2] = temp;
 		temp = back[1][0];
-
-
-
 		back[1][0] = back[2][1];
 		back[2][1] = back[1][2];
 		back[1][2] = back[0][1];
@@ -409,85 +390,76 @@ void updateColors(char a)
 }
 
 void topc()
-{
-
-
-
+{ 
 	updateColors('t');
 	int temp1 = front[0][0];
 	int temp2 = front[0][1];
 	int temp3 = front[0][2];
 
-	front[0][0] = righ[0][0];
-	front[0][1] = righ[0][1];
-	front[0][2] = righ[0][2];
+	front[0][0] = lef[0][0];
+	front[0][1] = lef[1][0];
+	front[0][2] = lef[2][0];
 
-	righ[0][0] = back[0][0];
-	righ[0][1] = back[0][1];
-	righ[0][2] = back[0][2];
+	lef[0][0] = back[0][2];
+	lef[1][0] = back[0][1];
+	lef[2][0] = back[0][0];
 
-	back[0][0] = lef[0][0];
-	back[0][1] = lef[0][1];
-	back[0][2] = lef[0][2];
+	back[0][0] = righ[0][0];
+	back[0][1] = righ[1][0];
+	back[0][2] = righ[2][0];
 
-	lef[0][0] = temp1;
-	lef[0][1] = temp2;
-	lef[0][2] = temp3;
+	righ[0][0] = temp3;
+	righ[1][0] = temp2;
+	righ[2][0] = temp1;
 
 }
 
 void frontc()
 {
-
-
-
 	updateColors('f');
-	int temp1 = lef[0][2];
-	int temp2 = lef[1][2];
+	int temp1 = lef[2][0];
+	int temp2 = lef[2][1];
 	int temp3 = lef[2][2];
 
-	lef[0][2] = bottom[0][0];
-	lef[1][2] = bottom[0][1];
-	lef[2][2] = bottom[0][2];
+	lef[2][0] = bottom[2][0];
+	lef[2][1] = bottom[2][1];
+	lef[2][2] = bottom[2][2];
 
-	bottom[0][0] = righ[2][0];
-	bottom[0][1] = righ[1][0];
-	bottom[0][2] = righ[0][0];
+	bottom[2][0] = righ[2][2];
+	bottom[2][1] = righ[2][1];
+	bottom[2][2] = righ[2][0];
 
-	righ[2][0] = top[2][2];
-	righ[1][0] = top[2][1];
-	righ[0][0] = top[2][0];
+	righ[2][0] = top[2][0];
+	righ[2][1] = top[2][1];
+	righ[2][2] = top[2][2];
 
-	top[2][2] = temp1;
+	top[2][2] = temp3;
 	top[2][1] = temp2;
-	top[2][0] = temp3;
+	top[2][0] = temp1;
 }
 
 void rightc()
 {
 	updateColors('r');
+	int temp1 = top[0][2];
+	int temp2 = top[1][2];
+	int temp3 = top[2][2];
 
+	top[0][2] = back[2][2];
+	top[1][2] = back[1][2];
+	top[2][2] = back[0][2];
 
-
-	int temp1 = top[0][0];
-	int temp2 = top[1][0];
-	int temp3 = top[2][0];
-
-	top[0][0] = back[0][0];
-	top[1][0] = back[1][0];
-	top[2][0] = back[2][0];
-
-	back[0][0] = bottom[0][0];
-	back[1][0] = bottom[1][0];
-	back[2][0] = bottom[2][0];
+	back[0][2] = bottom[0][2];
+	back[1][2] = bottom[1][2];
+	back[2][2] = bottom[2][2];
 	
-	bottom[0][0] = front[2][0];
-	bottom[1][0] = front[1][0];
-	bottom[2][0] = front[0][0];
+	bottom[0][2] = front[2][2];
+	bottom[1][2] = front[1][2];
+	bottom[2][2] = front[0][2];
 
-	front[0][0] = temp1;
-	front[1][0] = temp2;
-	front[2][0] = temp3;
+	front[0][2] = temp1;
+	front[1][2] = temp2;
+	front[2][2] = temp3;
 
 
 	
@@ -495,9 +467,6 @@ void rightc()
 
 void leftc()
 {
-
-
-
 	updateColors('l');
 	int temp1 = front[0][0];
 	int temp2 = front[1][0];
@@ -515,7 +484,6 @@ void leftc()
 	back[1][0] = bottom[1][0];
 	back[2][0] = bottom[2][0];
 
-
 	bottom[0][0] = temp3;
 	bottom[1][0] = temp2;
 	bottom[2][0] = temp1;
@@ -523,63 +491,122 @@ void leftc()
 
 void backc()
 {
-
-
-
 	updateColors('k');
-	int temp1 = top[0][0];
-	int temp2 = top[0][1];
-	int temp3 = top[0][2];
+	int temp1 = lef[0][0];
+	int temp2 = lef[0][1];
+	int temp3 = lef[0][2];
 
-	top[0][0] = righ[0][2];
-	top[0][1] = righ[1][2];
-	top[0][2] = righ[2][2];
+	lef[0][0] = bottom[0][0];
+	lef[0][1] = bottom[0][1];
+	lef[0][2] = bottom[0][2];
 
-	righ[0][2] = bottom[2][2];
-	righ[1][2] = bottom[2][1];
-	righ[2][2] = bottom[2][0];
+	bottom[0][0] = righ[0][2];
+	bottom[0][1] = righ[0][1];
+	bottom[0][2] = righ[0][0];
 
-	bottom[2][2] = lef[2][0];
-	bottom[2][1] = lef[1][0];
-	bottom[2][0] = lef[0][0];
+	righ[0][0] = top[0][0];
+	righ[0][1] = top[0][1];
+	righ[0][2] = top[0][2];
 
-	lef[2][0] = temp1;
-	lef[1][0] = temp2;
-	lef[0][0] = temp3;
+	top[0][2] = temp3;
+	top[0][1] = temp2;
+	top[0][0] = temp1;
 }
 
+void middlecx()
+{
+	int temp1 = front[0][1];
+	int temp2 = front[1][1];
+	int temp3 = front[2][1];
 
+	front[0][1] = top[0][1];
+	front[1][1] = top[1][1];
+	front[2][1] = top[2][1];
+
+	top[0][1] = back[2][1];
+	top[1][1] = back[1][1];
+	top[2][1] = back[0][1];
+
+	back[0][1] = bottom[0][1];
+	back[1][1] = bottom[1][1];
+	back[2][1] = bottom[2][1];
+
+	bottom[0][1] = temp3;
+	bottom[1][1] = temp2;
+	bottom[2][1] = temp1;
+}
+void middlecy()
+{
+	int temp1 = front[1][0];
+	int temp2 = front[1][1];
+	int temp3 = front[1][2];
+
+	front[1][0] = lef[0][1];
+	front[1][1] = lef[1][1];
+	front[1][2] = lef[2][1];
+
+	lef[0][1] = back[1][2];
+	lef[1][1] = back[1][1];
+	lef[2][1] = back[1][0];
+
+	back[1][0] = righ[0][1];
+	back[1][1] = righ[1][1];
+	back[1][2] = righ[2][1];
+
+	righ[0][1] = temp3;
+	righ[1][1] = temp2;
+	righ[2][1] = temp1;
+}
+void middlecz()
+{
+	int temp1 = lef[1][0];
+	int temp2 = lef[1][1];
+	int temp3 = lef[1][2];
+
+	lef[1][0] = bottom[1][0];
+	lef[1][1] = bottom[1][1];
+	lef[1][2] = bottom[1][2];
+
+	bottom[1][0] = righ[1][2];
+	bottom[1][1] = righ[1][1];
+	bottom[1][2] = righ[1][0];
+
+	righ[1][0] = top[1][0];
+	righ[1][1] = top[1][1];
+	righ[1][2] = top[1][2];
+
+	top[1][2] = temp3;
+	top[1][1] = temp2;
+	top[1][0] = temp1;
+}
 void bottomc()
 {
-
-
 
 	updateColors('b');
 	int temp1 = front[2][0];
 	int temp2 = front[2][1];
 	int temp3 = front[2][2];
 
-	front[2][0] = lef[2][0];
-	front[2][1] = lef[2][1];
+	front[2][0] = lef[0][2];
+	front[2][1] = lef[1][2];
 	front[2][2] = lef[2][2];
 
-	lef[2][0] = back[2][0];
-	lef[2][1] = back[2][1];
-	lef[2][2] = back[2][2];
+	lef[0][2] = back[2][2];
+	lef[1][2] = back[2][1];
+	lef[2][2] = back[2][0];
 
-	back[2][0] = righ[2][0];
-	back[2][1] = righ[2][1];
+	back[2][0] = righ[0][2];
+	back[2][1] = righ[1][2];
 	back[2][2] = righ[2][2];
 
-	righ[2][0] = temp1;
-	righ[2][1] = temp2;
-	righ[2][2] = temp3;
+	righ[0][2] = temp3;
+	righ[1][2] = temp2;
+	righ[2][2] = temp1;
 
 }
 
 
 	 
-
 
 
 void bindColor()
@@ -643,12 +670,7 @@ void drawCube()
 			{
 				glPushMatrix();
 		
-				switch (selector)
-				{
-				case 'i': if (i == selector_value) glRotatef(angle, 1, 0, 0); break;
-				case 'j': if (j == selector_value) glRotatef(angle, 0, 1, 0); break;
-				case 'k': if (k == selector_value) glRotatef(angle, 0, 0, 1); break;
-				}
+				
 				Colors.clear();
 				bindColor();
 				draw_cube(i, j, k,count);
@@ -667,8 +689,6 @@ void drawCube()
 
 	
 	glPopMatrix();
-
-	//gluLookAt(0, 0, 0, 0, 0, 0, 0, 1, 0);
 
 	drawBack();
 
@@ -695,6 +715,7 @@ void display() {
 		
 		drawCube();
 		drawGrid();
+
 		
 	}
 	else 
@@ -865,140 +886,131 @@ void keyboardFunc(unsigned char key, int x, int y)
 	case 'R': // right
 	case 'r':
 		rotY += 24;
-		
-		std::cout << "r" << std::endl;
 		break;
 	
 	case 'L': // left
 	case 'l':
 		rotY -= 24;
-		std::cout << "l" << std::endl;
 		break; 
 	
 	case 'U': //Up
 	case 'u':
-		std::cout << "u" << std::endl;
 		rotX += 24;
 			break;
 
 	case 'D': // Down
 	case 'd':
-		std::cout << "d" << std::endl;
 		rotX -= 24;
 			break;
 	case 'i'://side face antiClockwise
-		selector = 'i';
-		selector_value = minValue;
-		x1 += 90;
-		angle = x1;
 		leftc();
-	
-		
 		break;
 	case 'I'://side face clockwise
-		selector = 'i';
-		selector_value = minValue;
-			x1-= 90;
-			angle = x1;
 			leftc(); leftc(); leftc();
 			break;
 	case 'j':
-		selector = 'i';
-		selector_value = minValue+cube_size;
-		x1 += 45;
-		angle = x1;
+		//selector = 'i';
+		//selector_value = minValue+cube_size;
+		//x1 += 45;
+		//angle = x1;
+		middlecx();
 		
 		
 		break;
 	case 'J':
-		selector = 'i';
-		selector_value = minValue+cube_size;
-		x1 -= 90;
-		angle = x1;
+		//selector = 'i';
+		//selector_value = minValue+cube_size;
+		//x1 -= 90;
+		//angle = x1;
+		middlecx(); middlecx(); middlecx();
 		break;
-
 	case 'k':
-		selector = 'i';
-		selector_value = minValue + 2*cube_size;
-		x2 += 90;
-		angle = x2;
-		//rightc();
+		rightc();
 		break;
 
 	case 'K':
-		selector = 'i';
-		selector_value = minValue + 2*cube_size;
-		x2 -= 90;
-		angle = x2;
-		//rightc(); rightc(); rightc();
+		rightc(); rightc(); rightc();
 		break;
 	case 'q':
-		selector = 'j';
-		selector_value = minValue;
-		angle -= 45;
+		//selector = 'j';
+		//selector_value = minValue;
+		//angle -= 45;
+		bottomc();
 		break;
 	case 'Q':
-		selector = 'j';
-		selector_value = minValue;
-		angle += 45;
+		//selector = 'j';
+		//selector_value = minValue;
+		//angle += 45;
+		bottomc(); bottomc(); bottomc();
 		break;
 	
 	case 'm':
-		selector = 'j';
-		selector_value = minValue +  cube_size;
-		angle -= 45;
+		//selector = 'j';
+		//selector_value = minValue +  cube_size;
+		//angle -= 45;
+		middlecz();
 		break;
 	case 'M':
-		selector = 'j';
-		selector_value = minValue +  cube_size;
-		angle+= 45;
+		//selector = 'j';
+	//	selector_value = minValue +  cube_size;
+		// angle += 45;
+		middlecz(); middlecz(); middlecz();
 		break;
 	case 'b':
-		selector = 'j';
-		selector_value = minValue + 2 * cube_size;
-		angle -= 45;
+		//selector = 'j';
+		//selector_value = minValue + 2 * cube_size;
+		//angle -= 45;
+		middlecy();
 		break;
 
 	case 'B':
-		selector = 'j';
-		selector_value = minValue + 2 * cube_size;
-		angle -= 45;
+		//selector = 'j';
+		//selector_value = minValue + 2 * cube_size;
+		//angle -= 45;
+		middlecy();middlecy();middlecy();
+
 		break;
 
 	
 	case 'w':
-		selector = 'k';
-		selector_value = minValue + 2 * cube_size;
-		angle -= 45;
+		//selector = 'k';
+		// selector_value = minValue + 2 * cube_size;
+		//angle -= 45;
+		topc(); 
 		break;
 
 	case 'W':
-		selector = 'k';
-		selector_value = minValue + 2 * cube_size;
-		angle += 45;
+		//selector = 'k';
+		//selector_value = minValue + 2 * cube_size;
+		//angle += 45;
+		topc(); topc(); topc();
 		break;
 
 	case 'E':
-		selector = 'k';
-		selector_value = minValue + cube_size;
-		angle += 45;
+		//selector = 'k';
+		//selector_value = minValue + cube_size;
+		//angle += 45;
+		backc(); backc(); backc();
 		break;
 	case 'e':
-		selector = 'k';
-		selector_value = minValue + cube_size;
-		angle -= 45;
+		//selector = 'k';
+		 //selector_value = minValue + cube_size;
+		//angle -= 45;
+		backc();   
 		break;
 
 		// y-axis faces
 	case 'A':
-		selector = 'k';
-		selector_value = minValue ;
-		angle += 45;
+		//selector = 'k';
+		//selector_value = minValue ;
+		//angle += 45;
+		frontc(); frontc(); frontc();
 		break;
 	case 'a':
-		selector = 'k';
-		selector_value = minValue;
-		angle -= 45;
+		//selector = 'k';
+		//selector_value = minValue;
+		//angle -= 45;
+		frontc();
 		break;
 		case '1' :
 			print();
@@ -1031,7 +1043,7 @@ void reshape(GLsizei width, GLsizei height) {  // GLsizei for non-negative integ
 
 /* Main function: GLUT runs as a console application starting at main() */
 int main(int argc, char** argv) {
-	PlaySound("Monkeys Spinning Monkeys.wav", NULL, SND_ASYNC);
+	PlaySound("Monkeys Spinning Monkeys.wav", NULL, SND_ASYNC | SND_FILENAME | SND_LOOP);
 	glutInit(&argc, argv);// Initialize GLUT
 	glutInitDisplayMode(GLUT_DOUBLE|GLUT_DEPTH); // Enable double buffered mode
 	glutInitWindowSize(winw, winh);// Set the window's initial width & height
